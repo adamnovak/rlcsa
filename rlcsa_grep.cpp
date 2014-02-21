@@ -6,13 +6,16 @@
 using namespace CSA;
 
 
-enum mode_type { COUNT, DISPLAY, CONTEXT };
+enum mode_type { COUNT, TOTAL, START, RELATIVE, DISPLAY, CONTEXT };
 
 
 void printUsage()
 {
-  std::cout << "Usage: rlcsa_grep [-c] pattern base_name" << std::endl;
-  std::cout << "  -c    print the number of matching lines" << std::endl;
+  std::cout << "Usage: rlcsa_grep [-c|-t|-s|-r|-NUM] pattern base_name" << std::endl;
+  std::cout << "  -c    print the number of matching sequences" << std::endl;
+  std::cout << "  -t    print the total number of occurrences" << std::endl;
+  std::cout << "  -s    print the start positions of matches" << std::endl;
+  std::cout << "  -r    print the relative start positions of matches (sequence, position)" << std::endl;
   std::cout << "  -NUM  display NUM characters of leading and trailing context instead of" << std::endl;
   std::cout << "        the entire line" << std::endl;
 }
@@ -37,6 +40,18 @@ int main(int argc, char** argv)
     {
       mode = COUNT;
     }
+    else if(std::string("-t").compare(argv[1]) == 0)
+    {
+      mode = TOTAL;
+    }
+    else if(std::string("-s").compare(argv[1]) == 0)
+    {
+      mode = START;
+    }
+    else if(std::string("-r").compare(argv[1]) == 0)
+    {
+      mode = RELATIVE;
+    }
     else
     {
       mode = CONTEXT;
@@ -58,6 +73,13 @@ int main(int argc, char** argv)
   usint len = std::string(argv[pattern_arg]).length();
   pair_type result_range = rlcsa.count(argv[pattern_arg]);
   usint occurrences = length(result_range);
+  
+  if(mode == TOTAL)
+  {
+    std::cout << occurrences << std::endl;
+    return 0;
+  }
+  
   if(occurrences == 0)
   {
     if(mode == COUNT)
@@ -69,13 +91,15 @@ int main(int argc, char** argv)
 
   usint last_row = 0;
   usint* results = rlcsa.locate(result_range);
-  if(mode != CONTEXT)
+  if(mode == COUNT || mode == DISPLAY)
   {
+    // Make results hold text numbers instead of positions.
     rlcsa.getSequenceForPosition(results, occurrences);
   }
   std::sort(results, results + occurrences);
-  if(mode != CONTEXT)
+  if(mode == COUNT || mode == DISPLAY)
   {
+    // Find each text only once, even if it matches multiple times.
     for(usint i = 1; i < occurrences; i++)
     {
       if(results[i] != results[last_row])
@@ -97,6 +121,21 @@ int main(int argc, char** argv)
       std::cout.write((char*)row, length(rlcsa.getSequenceRange(results[i])));
       std::cout << std::endl;
       delete[] row;
+    }
+  }
+  else if(mode == START)
+  {
+    for(usint i = 0; i < occurrences; i++)
+    {
+      std::cout << results[i] << std::endl;
+    }
+  }
+  else if(mode == RELATIVE)
+  {
+    for(usint i = 0; i < occurrences; i++)
+    {
+      pair_type relative = rlcsa.getRelativePosition(results[i]);
+      std::cout << relative.first << ", " << relative.second << std::endl;
     }
   }
   else if(mode == CONTEXT)
