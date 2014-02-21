@@ -58,13 +58,14 @@ main(int argc, char** argv)
 
   double start = readTimer();
   double megabytes = 0.0;
-  RLCSABuilder builder(parameters.get(RLCSA_BLOCK_SIZE), parameters.get(SAMPLE_RATE), 0, threads);
+  
   
   std::cout << "Merging the indexes" << std::endl;
   
   double mark = readTimer();
-  std::cout << "Increment: " << base_name; std::cout.flush();
-  builder.insertFromFile(base_name);
+  std::cout << "Load: " << base_name; std::cout.flush();
+  RLCSA* originalIndex = new RLCSA(base_name);
+  RLCSABuilder builder(parameters.get(RLCSA_BLOCK_SIZE), parameters.get(SAMPLE_RATE), 0, threads, originalIndex);
   std::cout << " (" << (readTimer() - mark) << " seconds)" << std::endl;
   
   mark = readTimer();

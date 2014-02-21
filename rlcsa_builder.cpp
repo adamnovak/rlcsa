@@ -15,13 +15,19 @@ namespace CSA
 {
 
 
-RLCSABuilder::RLCSABuilder(usint _block_size, usint _sample_rate, usint _buffer_size, usint _threads) :
+RLCSABuilder::RLCSABuilder(usint _block_size, usint _sample_rate, usint _buffer_size, usint _threads, RLCSA* _index) :
   block_size(_block_size), sample_rate(_sample_rate), buffer_size(_buffer_size),
   threads(_threads),
   buffer(0)
 {
   this->reset();
   this->build_time = this->search_time = this->sort_time = this->merge_time = 0.0;
+  
+  if(_index != NULL)
+  {
+    this->setRLCSA(_index);
+  }
+  
 }
 
 RLCSABuilder::~RLCSABuilder()

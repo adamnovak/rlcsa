@@ -11,7 +11,10 @@ namespace CSA
 class RLCSABuilder
 {
   public:
-    RLCSABuilder(usint _block_size, usint _sample_rate, usint _buffer_size, usint _threads = 1);
+    // We can optionally specify a starting RLCSA, so we can start out with a
+    // big index without having to insertFromFile it (which requires the
+    // original file to still be around).
+    RLCSABuilder(usint _block_size, usint _sample_rate, usint _buffer_size, usint _threads = 1, RLCSA* _index = NULL);
     ~RLCSABuilder();
 
     // Note that the sequence must not contain character \0, unless buffer size is 0.
