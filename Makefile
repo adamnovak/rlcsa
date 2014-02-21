@@ -21,15 +21,16 @@ lcpsamples.o sampler.o suffixarray.o adaptive_samples.o docarray.o \
 bits/array.o bits/bitbuffer.o bits/multiarray.o bits/bitvector.o bits/deltavector.o \
 bits/rlevector.o bits/nibblevector.o bits/succinctvector.o misc/parameters.o misc/utils.o
 
-PROGRAMS = rlcsa_test lcp_test parallel_build build_rlcsa build_sa locate_test \
-display_test document_graph read_bwt extract_sequence rlcsa_grep build_plcp sample_lcp \
-sampler_test ss_test utils/extract_text utils/convert_patterns utils/split_text \
-utils/sort_wikipedia utils/genpatterns
+PROGRAMS = rlcsa_test lcp_test parallel_build build_rlcsa merge_rlcsa build_sa \
+locate_test display_test document_graph read_bwt extract_sequence rlcsa_grep build_plcp \
+sample_lcp sampler_test ss_test utils/extract_text utils/convert_patterns \
+utils/split_text utils/sort_wikipedia utils/genpatterns
 
 VPATH = bits:misc:utils
 
 
-default: parallel_build build_rlcsa rlcsa_test sampler_test display_test document_graph
+default: parallel_build build_rlcsa merge_rlcsa rlcsa_test sampler_test display_test \
+document_graph
 
 
 rlcsa.a: $(OBJS)
@@ -49,6 +50,9 @@ parallel_build: parallel_build.o rlcsa.a
 
 build_rlcsa: build_rlcsa.o rlcsa.a
 	$(CXX) $(CXXFLAGS) -o build_rlcsa build_rlcsa.o rlcsa.a
+	
+merge_rlcsa: merge_rlcsa.o rlcsa.a
+	$(CXX) $(CXXFLAGS) -o merge_rlcsa merge_rlcsa.o rlcsa.a
 
 build_sa: build_sa.o rlcsa.a
 	$(CXX) $(CXXFLAGS) -o build_sa build_sa.o rlcsa.a
