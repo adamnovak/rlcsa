@@ -90,7 +90,7 @@ int main(int argc, char** argv)
     return 5;
   }
 
-  usint* buffer = new usint[MILLION]; CSA::uint temp;
+  usint* buffer = new usint[MILLION]; CSA::usint temp;
   std::clock_t start = std::clock();
   if(do_output) { temp = rlcsa.getSize(); output.write((char*)&temp, sizeof(temp)); }
   for(usint curr = begin; curr <= end; curr += MILLION)
