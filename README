@@ -54,6 +54,7 @@ The default parameters are 32 bytes for block size and 128 for sample rate. To m
 
 build_rlcsa provides a simpler alternative for indexing one file. The program takes 1 or 2 parameters: base name of the input/output and an optional number of threads. The same assumptions and restrictions apply as for parallel_build.
 
+merge_rlcsa is able to merge an index with a new index created by build_rlcsa. The program takes 2 or 3 parameters: base name of the index to add to, base name of the index to add, and an optional number of threads. The original indexed file for the first index need not exist, but it must still be present for the second.
 
 Operations
 ----------
