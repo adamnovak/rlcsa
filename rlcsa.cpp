@@ -293,7 +293,11 @@ RLCSA::count(const std::string& pattern) const
 
   for(++iter; iter != pattern.rend(); ++iter)
   {
+    std::cout << "Before mapping: " << index_range.first << "-" << index_range.second << std::endl;
     index_range = this->LF(index_range, (uchar)*iter);
+    std::cout << "After mapping: " << index_range.first << "-" << index_range.second << std::endl;
+    pair_type unmapped = this->FL(index_range, (uchar)*iter);
+    std::cout << "After unmapping: " << unmapped.first << "-" << unmapped.second << std::endl;
     if(isEmpty(index_range)) { return EMPTY_PAIR; }
   }
   this->convertToSARange(index_range);
@@ -693,7 +697,11 @@ RLCSA::LF(pair_type range, usint c) const
   PsiVector::Iterator iter(*(this->array[c]));
 
   usint start = this->alphabet->cumulative(c) + this->number_of_sequences - 1;
+  std::cout << "\tstart: " << start << std::endl;
+  std::cout << "\tstart + rank(" << range.first << ") = " << start + iter.rank(range.first) << std::endl;
+  std::cout << "\tstart + rank(" << range.first << ", true) = " << start + iter.rank(range.first, true) << std::endl;
   range.first = start + iter.rank(range.first, true);
+  std::cout << "\tstart + rank(" << range.second << ") = " << start + iter.rank(range.second) << std::endl;
   range.second = start + iter.rank(range.second);
 
   return range;
@@ -705,17 +713,18 @@ RLCSA::FL(pair_type range, usint c) const
   if(c >= CHARS || this->array[c] == 0) { return EMPTY_PAIR; }
   PsiVector::Iterator iter(*(this->array[c]));
 
-
+  std::cout << "Unmapping " << (uchar) c << std::endl;
   usint start = this->alphabet->cumulative(c) + this->number_of_sequences - 1;
+  std::cout << "\tstart: " << start << std::endl;
   //sp_old = Occ^-1(c, 1, sp - C[c] - 1)
   // range.first = sp - 1
-  range.first = iter.select(range.first - start);
+  for(usint i = 0; i < 10; i++) {
+    std::cout << "\tselect(" << i << ") = " << (iter.select(i)) << std::endl;
+  }
+  std::cout << "\tUsing select(" << (range.first - start - 1) << ") = " << (iter.select(range.first - start - 1)) << std::endl;
+  range.first = iter.select(range.first - start - 1);
   //ep_old = Occ^-1(c, 1, ep - C[c])
-  range.second = iter.select(range.second - start);
-  
-  
-  range.first = start + iter.rank(range.first, true);
-  range.second = start + iter.rank(range.second);
+  range.second = iter.select(range.second - start - 1);
 
   return range;
 }
