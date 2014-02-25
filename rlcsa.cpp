@@ -699,6 +699,27 @@ RLCSA::LF(pair_type range, usint c) const
   return range;
 }
 
+pair_type
+RLCSA::FL(pair_type range, usint c) const
+{
+  if(c >= CHARS || this->array[c] == 0) { return EMPTY_PAIR; }
+  PsiVector::Iterator iter(*(this->array[c]));
+
+
+  usint start = this->alphabet->cumulative(c) + this->number_of_sequences - 1;
+  //sp_old = Occ^-1(c, 1, sp - C[c] - 1)
+  // range.first = sp - 1
+  range.first = iter.select(range.first - start);
+  //ep_old = Occ^-1(c, 1, ep - C[c])
+  range.second = iter.select(range.second - start);
+  
+  
+  range.first = start + iter.rank(range.first, true);
+  range.second = start + iter.rank(range.second);
+
+  return range;
+}
+
 std::vector<usint>*
 RLCSA::locateRange(pair_type range) const
 {

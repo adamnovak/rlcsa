@@ -236,6 +236,7 @@ class RLCSA
 
     // This is an unsafe function that does not check its parameters.
     pair_type LF(pair_type bwt_range, usint c) const;
+    pair_type FL(pair_type bwt_range, usint c) const;
 
     // User must free the returned vector.
     std::vector<usint>* locateRange(pair_type range) const;
