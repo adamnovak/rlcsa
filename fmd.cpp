@@ -134,7 +134,7 @@ FMD::extend(FMDPosition range, usint c, bool backward) const
     {
       if(BASES[base] == (char)c)
       {
-        std::cout << "Moving to " << answers[base] << " on " << BASES[base] << std::endl;
+        std::cout << "Moving " << range << " to " << answers[base] << " on " << BASES[base] << std::endl;
         // We found the right index for this character. Return that answer
         return answers[base];
       }
