@@ -77,6 +77,8 @@ int main(int argc, char** argv)
   // Try the alternative double-ended search
   FMDPosition fmd_result = fmd.fmdCount(argv[pattern_arg]);
   
+  std::cout << "Got " << fmd_result.length << " FMD matches, " << occurrences << " RLCSA matches" << std::endl;
+  
   if(mode == TOTAL)
   {
     std::cout << occurrences << std::endl;

@@ -2,6 +2,7 @@
 #define FMD_H
 
 #include <fstream>
+#include <iostream>
 #include <vector>
 #include <string>
 
@@ -77,8 +78,14 @@ struct FMDPosition {
   usint reverse_start;
   usint length;
   FMDPosition();
-  FMDPosition(usint forard_start, usint reverse_start, usint length);
+  FMDPosition(usint forward_start, usint reverse_start, usint length);
 };
+
+/**
+ * Provide pretty-printing for FMDPositions. See
+ * <http://www.parashift.com/c++-faq/output-operator.html>
+ */
+std::ostream& operator<< (std::ostream& o, FMDPosition const& position);
 
 const FMDPosition EMPTY_FMD_POSITION = FMDPosition(0, 0, 0);
 
