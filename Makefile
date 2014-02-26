@@ -16,7 +16,7 @@ VECTOR_FLAGS = $(PSI_FLAGS) $(LCP_FLAGS) $(SA_FLAGS)
 # SA_FLAGS = -DSUCCINCT_SA_VECTOR
 
 CXXFLAGS = -Wall -O3 $(SIZE_FLAGS) $(PARALLEL_FLAGS) $(VECTOR_FLAGS)
-OBJS = rlcsa.o rlcsa_builder.o sasamples.o alphabet.o \
+OBJS = rlcsa.o rlcsa_builder.o fmd.o sasamples.o alphabet.o \
 lcpsamples.o sampler.o suffixarray.o adaptive_samples.o docarray.o \
 bits/array.o bits/bitbuffer.o bits/multiarray.o bits/bitvector.o bits/deltavector.o \
 bits/rlevector.o bits/nibblevector.o bits/succinctvector.o misc/parameters.o misc/utils.o
@@ -74,6 +74,9 @@ extract_sequence: extract_sequence.o rlcsa.a
 
 rlcsa_grep: rlcsa_grep.o rlcsa.a
 	$(CXX) $(CXXFLAGS) -o rlcsa_grep rlcsa_grep.o rlcsa.a
+	
+fmd_grep: fmd_grep.o rlcsa.a
+	$(CXX) $(CXXFLAGS) -o fmd_grep fmd_grep.o rlcsa.a
 
 build_plcp: build_plcp.o rlcsa.a
 	$(CXX) $(CXXFLAGS) -o build_plcp build_plcp.o rlcsa.a

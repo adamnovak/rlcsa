@@ -285,7 +285,7 @@ class RLCSA
 //  INTERNAL VARIABLES
 //--------------------------------------------------------------------------
 
-  private:
+  protected:
     bool  ok;
     usint data_size;
 
