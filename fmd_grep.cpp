@@ -74,10 +74,14 @@ int main(int argc, char** argv)
   pair_type result_range = fmd.count(argv[pattern_arg]);
   usint occurrences = length(result_range);
   
-  // Try the alternative double-ended search
-  FMDPosition fmd_result = fmd.fmdCount(argv[pattern_arg]);
+  // Try the alternative double-ended backwards search
+  FMDPosition fmd_result = fmd.fmdCount(argv[pattern_arg], true);
+  // And also forwards search
+  FMDPosition fmd_result_forward; // = fmd.fmdCount(argv[pattern_arg], false);
   
-  std::cout << "Got " << fmd_result.length << " FMD matches, " << occurrences << " RLCSA matches" << std::endl;
+  std::cout << "Got " << fmd_result.length << " FMD matches, " << 
+    fmd_result_forward.length << " FMD forward matches, " << occurrences << 
+    " RLCSA matches" << std::endl;
   
   if(mode == TOTAL)
   {

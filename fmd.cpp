@@ -155,7 +155,7 @@ FMD::extend(FMDPosition range, usint c, bool backward) const
       true);
     
     // Reverse the interval again
-    FMDPosition forward(extended.reverse_start, extended.reverse_start,
+    FMDPosition forward(extended.reverse_start, extended.forward_start,
       extended.length);
     return forward;
   
@@ -169,25 +169,54 @@ FMD::getSAPosition() const
 }
 
 FMDPosition
-FMD::fmdCount(const std::string& pattern) const
+FMD::fmdCount(const std::string& pattern, bool backward) const
 {
   std::cout << "Counting " << pattern << std::endl;
 
   if(pattern.length() == 0) { return this->getSAPosition(); }
 
-  std::string::const_reverse_iterator iter = pattern.rbegin();
-  FMDPosition index_position = this->getCharPosition((uchar)*iter);
-  if(index_position.length <= 0) { return index_position; }
+  // Keep an FMDPosition to store our intermediate result in.
+  FMDPosition index_position;
 
-  std::cout << "Starting with " << index_position << std::endl;
-
-  for(++iter; iter != pattern.rend(); ++iter)
+  if(backward)
   {
-    // Backwards extend with subsequent characters.
-    index_position = this->extend(index_position, *iter, true);
-    std::cout << "Now at " << index_position << " after " << *iter << std::endl;
-    if(index_position.length <= 0) { return EMPTY_FMD_POSITION; }
+    // Start at the end of the pattern and work towards the front
+    
+    std::string::const_reverse_iterator iter = pattern.rbegin();
+    index_position = this->getCharPosition((uchar)*iter);
+    if(index_position.length <= 0) { return index_position; }
+
+    std::cout << "Starting with " << index_position << std::endl;
+
+    for(++iter; iter != pattern.rend(); ++iter)
+    {
+      // Backwards extend with subsequent characters.
+      index_position = this->extend(index_position, *iter, true);
+      std::cout << "Now at " << index_position << " after " << *iter << std::endl;
+      if(index_position.length <= 0) { return EMPTY_FMD_POSITION; }
+    }
   }
+  else 
+  {
+    // Start at the front of the pattern and work towards the end.
+    
+    std::string::const_iterator iter = pattern.begin();
+    index_position = this->getCharPosition(reverse_complement((uchar)*iter));
+    if(index_position.length <= 0) { return index_position; }
+
+    std::cout << "Starting with " << index_position << std::endl;
+
+    for(++iter; iter != pattern.end(); ++iter)
+    {
+      // Forwards extend with subsequent characters.
+      index_position = this->extend(index_position, *iter, false);
+      std::cout << "Now at " << index_position << " after " << *iter << 
+        std::endl;
+      if(index_position.length <= 0) { return EMPTY_FMD_POSITION; }
+    }
+    
+  }
+  
   this->convertToSAPosition(index_position);
 
   return index_position;

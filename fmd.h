@@ -114,9 +114,11 @@ class FMD : public RLCSA
     FMDPosition extend(FMDPosition range, usint c, bool backward) const;
     
     /**
-     * Count occurrences of a pattern using the FMD search algorithm.
+     * Count occurrences of a pattern using the FMD search algorithm, iterating
+     * through the pattern either forward or backward.
      */
-    FMDPosition fmdCount(const std::string& pattern) const;
+    FMDPosition fmdCount(const std::string& pattern, bool backward = true)
+      const;
   private:
     /**
      * Get an FMDPosition covering the whole SA.
