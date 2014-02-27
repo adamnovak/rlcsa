@@ -32,7 +32,10 @@ FMD::extend(FMDPosition range, usint c, bool backward) const
   // More or less directly implemented off of algorithms 2 and 3 in "Exploring
   // single-sample SNP and INDEL calling with whole-genome de novo assembly"
   // (Li, 2012). However, our character indices are one less, since we don't
-  // allow search patterns to include the end-of-text symbol.
+  // allow search patterns to include the end-of-text symbol. We also use
+  // alphabetical ordering instead of the paper's N-last ordering in the FM-
+  // index, and consequently need to assign reverse ranges in alphabetical order
+  // by reverse complement.
   
   if(backward)
   {
@@ -84,7 +87,7 @@ FMD::extend(FMDPosition range, usint c, bool backward) const
         // Get an iterator for the bit vector for this character, for
         // calculating ranks/occurrences.
         PsiVector::Iterator iter(*vector);
-      
+        
         DEBUG(std::cout << "\t\tGot iterator" << std::endl;)
       
         // Fill in the forward-strand start positions and range lengths for each
@@ -93,6 +96,21 @@ FMD::extend(FMDPosition range, usint c, bool backward) const
           true);
         answers[base].length = iter.rank(range.forward_start + range.length, 
           false) - iter.rank(range.forward_start, true);
+          
+        // Make sure rank and select work reasonably.
+          
+        for(int i = -2; i < range.length + 1; i++) {
+          DEBUG(std::cout << "\t\trank(" << range.forward_start + i << ", true)=" <<
+            iter.rank(range.forward_start + i, true) << std::endl;)
+        }
+          
+        usint rank = iter.rank(range.forward_start, true);
+        
+        for(int i = rank; i >= 0; i--) {
+        
+          DEBUG(std::cout << "\t\tselect(" << i << ")=" << 
+            iter.select(i) << std::endl;)
+        }
         
       }
         
@@ -167,8 +185,7 @@ FMD::extend(FMDPosition range, usint c, bool backward) const
   else
   {
   
-    // Flip the input interval. TODO: why does GCC think these things may have
-    // uninitialized members?
+    // Flip the input interval.
     FMDPosition reverse(range.reverse_start, range.forward_start, range.length);
     
     // Do backwards search with the reverse complement of the base
@@ -178,6 +195,65 @@ FMD::extend(FMDPosition range, usint c, bool backward) const
     // Reverse the interval again
     FMDPosition forward(extended.reverse_start, extended.forward_start,
       extended.length);
+    return forward;
+  
+  }
+}
+
+FMDPosition
+FMD::retract(FMDPosition range, usint c, bool backward) const
+{
+
+  
+  if(backward)
+  {
+    DEBUG(std::cout << "Going back from " << range << " on " << (char)c <<
+      std::endl;)
+  
+    // Keep the original FMDPosition to build up. We call it "original" because
+    // we logically think about undoing an extension, but in reality it may
+    // never have existed.
+    FMDPosition original;
+  
+    // Get a pointer to the bit vector for this letter, which might be NULL if
+    // this base never appeared.
+    PsiVector* vector = this->array[c];
+    
+    if(vector == NULL) { throw "Character never appeared!"; }
+      
+    // Get an iterator for the bit vector for this character, for selecting by
+    // rank.
+    PsiVector::Iterator iter(*vector);
+  
+    // Count up the number of characters < this base, including sequence stop
+    // characters. The same as the "start" variable in extend.
+    usint start = this->alphabet->cumulative(c) + this->number_of_sequences - 1;
+    
+    DEBUG(std::cout << "\tOriginal start was " << start << std::endl;)
+      
+    // Back-derive the original forward_start, which can be done with "start"
+    // and the inverse of rank(i, true).
+    original.forward_start = iter.select(range.forward_start - start - 1);
+    
+    DEBUG(std::cout << "\tOriginal forward_start was " <<
+      original.forward_start << std::endl;)
+      
+    return original;
+    
+  }
+  else
+  {
+  
+    // Flip the input interval.
+    FMDPosition reverse(range.reverse_start, range.forward_start, range.length);
+    
+    // Do backwards retraction with the reverse complement of the base
+    FMDPosition retracted = this->retract(reverse, reverse_complement(c),
+      true);
+    
+    // Reverse the interval again
+    FMDPosition forward(retracted.reverse_start, retracted.forward_start,
+      retracted.length);
     return forward;
   
   }
@@ -215,6 +291,8 @@ FMD::fmdCount(const std::string& pattern, bool backward) const
       index_position = this->extend(index_position, *iter, true);
       DEBUG(std::cout << "Now at " << index_position << " after " << *iter <<
         std::endl;)
+      // Test out retracting
+      this->retract(index_position, *iter, true);
       if(isEmpty(index_position)) { return EMPTY_FMD_POSITION; }
     }
   }
@@ -234,6 +312,8 @@ FMD::fmdCount(const std::string& pattern, bool backward) const
       index_position = this->extend(index_position, *iter, false);
       DEBUG(std::cout << "Now at " << index_position << " after " << *iter << 
         std::endl;)
+      // Test out retracting
+      this->retract(index_position, *iter, false);
       if(isEmpty(index_position)) { return EMPTY_FMD_POSITION; }
     }
     

@@ -5,8 +5,8 @@
  * Define a macro for easily compiling in/out detailed debugging information
  * about FMD search.
  */
-//#define DEBUG(op) op
-#define DEBUG(op)
+#define DEBUG(op) op
+//#define DEBUG(op)
 
 #include <fstream>
 #include <iostream>
@@ -145,6 +145,13 @@ class FMD : public RLCSA
      * BWT coordinates.
      */
     FMDPosition extend(FMDPosition range, usint c, bool backward) const;
+    
+    /**
+     * Retract a search by a character, either backward or forward. Reverses a
+     * call to extend, but can also retract one way when the extend call was
+     * made going the other way. Ranges are in BWT coordinates.
+     */
+    FMDPosition retract(FMDPosition range, usint c, bool backward) const;
     
     /**
      * Count occurrences of a pattern using the FMD search algorithm, iterating
