@@ -48,26 +48,6 @@ FMD::extend(FMDPosition range, usint c, bool backward) const
     // tiny dynamic programming.
     FMDPosition answers[NUM_BASES];
     
-    // Since we don't keep an FMDPosition for the non-base end-of-text
-    // character, we need to track its length separately in order for the DP
-    // algorithm given in the paper to be implementable. We calculate
-    // occurrences of the text end character analytically, since we know there
-    // are this->number_of_sequences of them, at the start of the BWT space.
-    usint endOfTextLength = std::min((range.forward_start + range.length - 1), 
-      this->number_of_sequences) - std::min(this->number_of_sequences, 
-      (range.forward_start - 1));
-      
-    std::cout << "Number of sequences: " << this->number_of_sequences << std::endl;
-    
-    std::cout << "endOfText characters before " << range.forward_start + range.length << " = " << std::min((range.forward_start + range.length), this->number_of_sequences) << std::endl;
-    
-    std::cout << "endOfText characters before " << range.forward_start << " = " << std::min((range.forward_start), this->number_of_sequences) << std::endl;
-    
-    std::cout << "endOfTextLength = " << std::min((range.forward_start + range.length), 
-      this->number_of_sequences) << " - " << std::min(this->number_of_sequences, 
-      (range.forward_start)) << " = " << endOfTextLength << std::endl;
-    //std::cout << "\tendOfTextLength = " << endOfTextLength << std::endl;
-
     for(usint base = 0; base < NUM_BASES; base++)
     {
       
@@ -115,8 +95,29 @@ FMD::extend(FMDPosition range, usint c, bool backward) const
         
       
         
-      std::cout << "\t\tWould go to: " << answers[base].forward_start << "-" << (sint)answers[base].forward_start + answers[base].length << " length " << answers[base].length << std::endl;
+      std::cout << "\t\tWould go to: " << answers[base].forward_start << "-" << (sint)answers[base].forward_start + answers[base].length << " length " << length(answers[base]) << std::endl;
     }
+    
+    // Since we don't keep an FMDPosition for the non-base end-of-text
+    // character, we need to track its length separately in order for the DP
+    // algorithm given in the paper to be implementable. We calculate
+    // occurrences of the text end character (i.e. how much of the current range
+    // is devoted to things where an endOfText comes next) implicitly: it's
+    // whatever part of the length of the range is unaccounted-for by the other
+    // characters. We need to use the length accessor because ranges with one
+    // thing have the .length set to 0.
+    usint endOfTextLength = length(range);
+    
+    for(usint base = 0; base < NUM_BASES; base++)
+    {
+      endOfTextLength -= length(answers[base]);
+    }
+    
+    // Now subtract off 1 from the length to convert it back to the
+    // .length-0-is-1-thing format
+    //endOfTextLength--;
+      
+    std::cout << "\tendOfTextLength = " << endOfTextLength << std::endl;
     
     std::cout << "\tendOfText reverse_start would be " << range.reverse_start << std::endl;
     
