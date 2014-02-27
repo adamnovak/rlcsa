@@ -42,7 +42,8 @@ FMD::extend(FMDPosition range, usint c, bool backward) const
     // Only allow DNA bases
     if(!isBase(c)) { return EMPTY_FMD_POSITION; }
     
-    std::cout << "Extending " << range << " backwards with " << (char)c << std::endl;
+    DEBUG(std::cout << "Extending " << range << " backwards with " << (char)c <<
+      std::endl;)
     
     // We have an array of FMDPositions, one per base, that we will fill in by a
     // tiny dynamic programming.
@@ -50,15 +51,17 @@ FMD::extend(FMDPosition range, usint c, bool backward) const
     
     for(usint base = 0; base < NUM_BASES; base++)
     {
+      // Go through the bases in arbitrary order.
       
-      std::cout << "\tThinking about base " << base << "(" << BASES[base] << ")" << std::endl;
+      DEBUG(std::cout << "\tThinking about base " << base << "(" << 
+        BASES[base] << ")" << std::endl;)
       
       // Count up the number of characters < this base, including sequence stop
       // characters.
       usint start = this->alphabet->cumulative((usint)BASES[base]) + 
         this->number_of_sequences - 1;
         
-      std::cout << "\t\tstart = " << start << std::endl;
+      DEBUG(std::cout << "\t\tstart = " << start << std::endl;)
       
       // Get a pointer to the bit vector for this letter, which might be NULL if
       // this base never appeared.
@@ -66,7 +69,7 @@ FMD::extend(FMDPosition range, usint c, bool backward) const
       
       if(vector == NULL)
       {
-        std::cout << "\t\tCharacter never appeared!" << std::endl;
+        DEBUG(std::cout << "\t\tCharacter never appeared!" << std::endl;)
         
         // Fill in forward_start and length with the knowledge that this
         // character doesn't exist. forward_start should never get used, but
@@ -76,13 +79,13 @@ FMD::extend(FMDPosition range, usint c, bool backward) const
       }
       else
       {
-        std::cout << "\t\tCharacter appeared." << std::endl;
+        DEBUG(std::cout << "\t\tCharacter appeared." << std::endl;)
         
         // Get an iterator for the bit vector for this character, for
         // calculating ranks/occurrences.
         PsiVector::Iterator iter(*vector);
       
-        std::cout << "\t\tGot iterator" << std::endl;
+        DEBUG(std::cout << "\t\tGot iterator" << std::endl;)
       
         // Fill in the forward-strand start positions and range lengths for each
         // base's answer. TODO: do we want at_least set or not? What does it do?
@@ -95,7 +98,9 @@ FMD::extend(FMDPosition range, usint c, bool backward) const
         
       
         
-      std::cout << "\t\tWould go to: " << answers[base].forward_start << "-" << (sint)answers[base].forward_start + answers[base].length << " length " << length(answers[base]) << std::endl;
+      DEBUG(std::cout << "\t\tWould go to: " << answers[base].forward_start <<
+        "-" << (sint)answers[base].forward_start + answers[base].length << 
+        " length " << length(answers[base]) << std::endl;)
     }
     
     // Since we don't keep an FMDPosition for the non-base end-of-text
@@ -110,56 +115,53 @@ FMD::extend(FMDPosition range, usint c, bool backward) const
     
     for(usint base = 0; base < NUM_BASES; base++)
     {
+      // Go through the bases in arbitrary order and account for their lengths.
       endOfTextLength -= length(answers[base]);
     }
     
-    // Now subtract off 1 from the length to convert it back to the
-    // .length-0-is-1-thing format
-    //endOfTextLength--;
       
-    std::cout << "\tendOfTextLength = " << endOfTextLength << std::endl;
+    DEBUG(std::cout << "\tendOfTextLength = " << endOfTextLength << std::endl;)
     
-    std::cout << "\tendOfText reverse_start would be " << range.reverse_start << std::endl;
+    // The endOfText character is the very first character we need to account
+    // for when subdividing the reverse range and picking which subdivision to
+    // take.
+    DEBUG(std::cout << "\tendOfText reverse_start would be " << 
+      range.reverse_start << std::endl;)
     
-    // Set up the dynamic programming for the reverse start, to figure out where
-    // the corresponding reverse intervals are.
+    // Next, allocate the range for the base that comes first in alphabetical
+    // order by reverse complement.
+    answers[0].reverse_start = range.reverse_start + endOfTextLength;
+    DEBUG(std::cout << "\t" << BASES[0] << " reverse_start is " << 
+      answers[0].reverse_start << std::endl;)
     
-    // This dynamic programming has to go through bases in alphabetical order by
-    // reverse complement: T, then G, then C, then N, than A. Or, by base index,
-    // 4, then 2, then 1, then 3, then 0.
+    for(usint base = 1; base < NUM_BASES; base++)
+    {
+      // For each subsequent base in alphabetical order by reverse complement
+      // (as stored in BASES), allocate it the next part of the reverse range.
+      
+      answers[base].reverse_start = answers[base - 1].reverse_start + 
+        length(answers[base - 1]);
+      DEBUG(std::cout << "\t" << BASES[base] << " reverse_start is " << 
+        answers[base].reverse_start << std::endl;)
+      
+    }
     
-    // Do base 4 (T, RC=A)
-    answers[4].reverse_start = range.reverse_start + endOfTextLength;
-    std::cout << "\t" << BASES[4] << " reverse_start is " << answers[4].reverse_start << std::endl;
+    // Now all the per-base answers are filled in.
     
-    // Do base 2 (G, RC=C)
-    answers[2].reverse_start = answers[4].reverse_start + length(answers[4]);
-    std::cout << "\t" << BASES[2] << " reverse_start is " << answers[2].reverse_start << std::endl;
-    
-    // Do base 1 (C, RC=G)
-    answers[1].reverse_start = answers[2].reverse_start + length(answers[2]);
-    std::cout << "\t" << BASES[1] << " reverse_start is " << answers[1].reverse_start << std::endl;
-    
-    // Do base 3 (N, RC=N)
-    answers[3].reverse_start = answers[1].reverse_start + length(answers[1]);
-    std::cout << "\t" << BASES[3] << " reverse_start is " << answers[3].reverse_start << std::endl;
-    
-    // Do base 0 (A, RC=T)
-    answers[0].reverse_start = answers[3].reverse_start + length(answers[3]);
-    std::cout << "\t" << BASES[0] << " reverse_start is " << answers[0].reverse_start << std::endl;
-    
-    // Return the correct answer for the base we actually want
     for(usint base = 0; base < NUM_BASES; base++)
     {
+      // For each base in arbitrary order
       if(BASES[base] == (char)c)
       {
-        std::cout << "Moving " << range << " to " << answers[base] << " on " << BASES[base] << std::endl;
-        // We found the right index for this character. Return that answer
+        DEBUG(std::cout << "Moving " << range << " to " << answers[base] << 
+          " on " << BASES[base] << std::endl;)
+        // This is the base we're actually supposed to be extending with. Return
+        // its answer.
         return answers[base];
       }
     }
     
-    // If we ger here, they gave us something not in BASES somehow.
+    // If we get here, they gave us something not in BASES somehow.
     throw "Unrecognized base";
   }
   else
@@ -190,7 +192,7 @@ FMD::getSAPosition() const
 FMDPosition
 FMD::fmdCount(const std::string& pattern, bool backward) const
 {
-  std::cout << "Counting " << pattern << std::endl;
+  DEBUG(std::cout << "Counting " << pattern << std::endl;)
 
   if(pattern.length() == 0) { return this->getSAPosition(); }
 
@@ -205,14 +207,14 @@ FMD::fmdCount(const std::string& pattern, bool backward) const
     index_position = this->getCharPosition((uchar)*iter);
     if(isEmpty(index_position)) { return index_position; }
 
-    std::cout << "Starting with " << index_position << std::endl;
+    DEBUG(std::cout << "Starting with " << index_position << std::endl;)
 
     for(++iter; iter != pattern.rend(); ++iter)
     {
       // Backwards extend with subsequent characters.
       index_position = this->extend(index_position, *iter, true);
-      std::cout << "Now at " << index_position << " after " << *iter <<
-        std::endl;
+      DEBUG(std::cout << "Now at " << index_position << " after " << *iter <<
+        std::endl;)
       if(isEmpty(index_position)) { return EMPTY_FMD_POSITION; }
     }
   }
@@ -224,14 +226,14 @@ FMD::fmdCount(const std::string& pattern, bool backward) const
     index_position = this->getCharPosition((uchar)*iter);
     if(isEmpty(index_position)) { return index_position; }
 
-    std::cout << "Starting with " << index_position << std::endl;
+    DEBUG(std::cout << "Starting with " << index_position << std::endl;)
 
     for(++iter; iter != pattern.end(); ++iter)
     {
       // Forwards extend with subsequent characters.
       index_position = this->extend(index_position, *iter, false);
-      std::cout << "Now at " << index_position << " after " << *iter << 
-        std::endl;
+      DEBUG(std::cout << "Now at " << index_position << " after " << *iter << 
+        std::endl;)
       if(isEmpty(index_position)) { return EMPTY_FMD_POSITION; }
     }
     
@@ -250,11 +252,13 @@ FMD::getCharPosition(usint c) const
   
   pair_type forward_range = this->alphabet->getRange(c);
   this->convertToBWTRange(forward_range);
-  std::cout << (char)c << " range: " << forward_range.first << "-" << forward_range.second << std::endl;
+  DEBUG(std::cout << (char)c << " range: " << forward_range.first << "-" << 
+    forward_range.second << std::endl;)
   
   pair_type reverse_range = this->alphabet->getRange(reverse_complement(c));
   this->convertToBWTRange(reverse_range);
-  std::cout << (char)reverse_complement(c) << " range: " << reverse_range.first << "-" << reverse_range.second << std::endl;
+  DEBUG(std::cout << (char)reverse_complement(c) << " range: " << 
+    reverse_range.first << "-" << reverse_range.second << std::endl;)
   
   // Make the FMDPosition rolling together both ranges.
   // TODO: Make sure both ranges are the same length, as they should be.

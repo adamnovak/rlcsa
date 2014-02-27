@@ -1,6 +1,13 @@
 #ifndef FMD_H
 #define FMD_H
 
+/**
+ * Define a macro for easily compiling in/out detailed debugging information
+ * about FMD search.
+ */
+//#define DEBUG(op) op
+#define DEBUG(op)
+
 #include <fstream>
 #include <iostream>
 #include <vector>
@@ -25,9 +32,12 @@ namespace CSA
 
 const static usint NUM_BASES = 5;
 
-const static std::string BASES = "ACGNT";
-// This holds the bases in alphabetcal order by reverse complement.
-const static std::string BASES_RC_ORDER = "TGCNA";
+// This holds the bases in alphabetcal order by reverse complement. The only
+// time the order of the bases matters is when doing the iterative scoping out
+// of the reverse complement intervals in the extension procedure, and there we
+// need to go through them in this order.
+const static std::string BASES = "TGCNA";
+
 
 /**
  * Return true if a character is a valid DNA base, and false otherwise. Only
