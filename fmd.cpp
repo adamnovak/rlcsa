@@ -192,7 +192,8 @@ FMD::fmdCount(const std::string& pattern, bool backward) const
     {
       // Backwards extend with subsequent characters.
       index_position = this->extend(index_position, *iter, true);
-      std::cout << "Now at " << index_position << " after " << *iter << std::endl;
+      std::cout << "Now at " << index_position << " after " << *iter <<
+        std::endl;
       if(isEmpty(index_position)) { return EMPTY_FMD_POSITION; }
     }
   }
@@ -201,7 +202,7 @@ FMD::fmdCount(const std::string& pattern, bool backward) const
     // Start at the front of the pattern and work towards the end.
     
     std::string::const_iterator iter = pattern.begin();
-    index_position = this->getCharPosition(reverse_complement((uchar)*iter));
+    index_position = this->getCharPosition((uchar)*iter);
     if(isEmpty(index_position)) { return index_position; }
 
     std::cout << "Starting with " << index_position << std::endl;
