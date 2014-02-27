@@ -42,7 +42,7 @@ FMD::extend(FMDPosition range, usint c, bool backward) const
     // Only allow DNA bases
     if(!isBase(c)) { return EMPTY_FMD_POSITION; }
     
-    std::cout << "Extending backwards with " << (char)c << std::endl;
+    std::cout << "Extending " << range << " backwards with " << (char)c << std::endl;
     
     // We have an array of FMDPositions, one per base, that we will fill in by a
     // tiny dynamic programming.
@@ -57,7 +57,16 @@ FMD::extend(FMDPosition range, usint c, bool backward) const
       this->number_of_sequences) - std::min(this->number_of_sequences, 
       (range.forward_start - 1));
       
-    std::cout << "\tendOfTextLength = " << endOfTextLength << std::endl;
+    std::cout << "Number of sequences: " << this->number_of_sequences << std::endl;
+    
+    std::cout << "endOfText characters before " << range.forward_start + range.length << " = " << std::min((range.forward_start + range.length), this->number_of_sequences) << std::endl;
+    
+    std::cout << "endOfText characters before " << range.forward_start << " = " << std::min((range.forward_start), this->number_of_sequences) << std::endl;
+    
+    std::cout << "endOfTextLength = " << std::min((range.forward_start + range.length), 
+      this->number_of_sequences) << " - " << std::min(this->number_of_sequences, 
+      (range.forward_start)) << " = " << endOfTextLength << std::endl;
+    //std::cout << "\tendOfTextLength = " << endOfTextLength << std::endl;
 
     for(usint base = 0; base < NUM_BASES; base++)
     {
@@ -81,8 +90,8 @@ FMD::extend(FMDPosition range, usint c, bool backward) const
         
         // Fill in forward_start and length with the knowledge that this
         // character doesn't exist. forward_start should never get used, but
-        // length will get used and probably needs to be 0.
-        answers[base].length = 0;
+        // length will get used and probably needs to be -1 for empty.
+        answers[base].length = -1;
         
       }
       else
@@ -106,8 +115,10 @@ FMD::extend(FMDPosition range, usint c, bool backward) const
         
       
         
-      std::cout << "\t\tWould go to: " << answers[base].forward_start << "-" << answers[base].forward_start + answers[base].length << std::endl;
+      std::cout << "\t\tWould go to: " << answers[base].forward_start << "-" << (sint)answers[base].forward_start + answers[base].length << " length " << answers[base].length << std::endl;
     }
+    
+    std::cout << "\tendOfText reverse_start would be " << range.reverse_start << std::endl;
     
     // Set up the dynamic programming for the reverse start, to figure out where
     // the corresponding reverse intervals are.
@@ -118,14 +129,14 @@ FMD::extend(FMDPosition range, usint c, bool backward) const
     for(int base = 2; base >= 0; base--)
     {
       answers[base].reverse_start = answers[base + 1].reverse_start +
-        answers[base + 1].length;
+        length(answers[base + 1]);
         
       std::cout << "\t" << BASES[base] << " reverse_start is " << answers[base].reverse_start << std::endl;
     }
 
     // N comes after (before?) everything for some reason. TODO: why? Is it
     // something to do with the encoding Heng uses?
-    answers[4].reverse_start = answers[0].reverse_start + answers[0].length;
+    answers[4].reverse_start = answers[0].reverse_start + length(answers[0]);
     
     std::cout << "\t" << BASES[4] << " reverse_start is " << answers[4].reverse_start << std::endl;
 

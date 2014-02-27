@@ -79,7 +79,7 @@ inline usint reverse_complement(usint input) {
 struct FMDPosition {
   usint forward_start;
   usint reverse_start;
-  usint length;
+  sint length;
   FMDPosition();
   FMDPosition(usint forward_start, usint reverse_start, usint length);
 };
