@@ -25,7 +25,9 @@ namespace CSA
 
 const static usint NUM_BASES = 5;
 
-const static std::string BASES = "ACGTN";
+const static std::string BASES = "ACGNT";
+// This holds the bases in alphabetcal order by reverse complement.
+const static std::string BASES_RC_ORDER = "TGCNA";
 
 /**
  * Return true if a character is a valid DNA base, and false otherwise. Only

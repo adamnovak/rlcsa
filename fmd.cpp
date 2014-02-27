@@ -123,24 +123,31 @@ FMD::extend(FMDPosition range, usint c, bool backward) const
     
     // Set up the dynamic programming for the reverse start, to figure out where
     // the corresponding reverse intervals are.
-    answers[3].reverse_start = range.reverse_start + endOfTextLength;
     
+    // This dynamic programming has to go through bases in alphabetical order by
+    // reverse complement: T, then G, then C, then N, than A. Or, by base index,
+    // 4, then 2, then 1, then 3, then 0.
+    
+    // Do base 4 (T, RC=A)
+    answers[4].reverse_start = range.reverse_start + endOfTextLength;
+    std::cout << "\t" << BASES[4] << " reverse_start is " << answers[4].reverse_start << std::endl;
+    
+    // Do base 2 (G, RC=C)
+    answers[2].reverse_start = answers[4].reverse_start + length(answers[4]);
+    std::cout << "\t" << BASES[2] << " reverse_start is " << answers[2].reverse_start << std::endl;
+    
+    // Do base 1 (C, RC=G)
+    answers[1].reverse_start = answers[2].reverse_start + length(answers[2]);
+    std::cout << "\t" << BASES[1] << " reverse_start is " << answers[1].reverse_start << std::endl;
+    
+    // Do base 3 (N, RC=N)
+    answers[3].reverse_start = answers[1].reverse_start + length(answers[1]);
     std::cout << "\t" << BASES[3] << " reverse_start is " << answers[3].reverse_start << std::endl;
     
-    for(int base = 2; base >= 0; base--)
-    {
-      answers[base].reverse_start = answers[base + 1].reverse_start +
-        length(answers[base + 1]);
-        
-      std::cout << "\t" << BASES[base] << " reverse_start is " << answers[base].reverse_start << std::endl;
-    }
-
-    // N comes after (before?) everything for some reason. TODO: why? Is it
-    // something to do with the encoding Heng uses?
-    answers[4].reverse_start = answers[0].reverse_start + length(answers[0]);
+    // Do base 0 (A, RC=T)
+    answers[0].reverse_start = answers[3].reverse_start + length(answers[3]);
+    std::cout << "\t" << BASES[0] << " reverse_start is " << answers[0].reverse_start << std::endl;
     
-    std::cout << "\t" << BASES[4] << " reverse_start is " << answers[4].reverse_start << std::endl;
-
     // Return the correct answer for the base we actually want
     for(usint base = 0; base < NUM_BASES; base++)
     {
