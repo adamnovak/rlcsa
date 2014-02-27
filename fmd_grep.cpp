@@ -8,6 +8,7 @@ using namespace CSA;
 
 enum mode_type { COUNT, TOTAL, START, RELATIVE, DISPLAY, CONTEXT };
 
+void print_results(pair_type result_range, const FMD& fmd, mode_type mode, usint pattern_length, usint context);
 
 void printUsage()
 {
@@ -77,16 +78,38 @@ int main(int argc, char** argv)
   // Try the alternative double-ended backwards search
   FMDPosition fmd_result = fmd.fmdCount(argv[pattern_arg], true);
   // And also forwards search
-  FMDPosition fmd_result_forward; // = fmd.fmdCount(argv[pattern_arg], false);
+  FMDPosition fmd_result_forward = fmd.fmdCount(argv[pattern_arg], false);
   
-  std::cout << "Got " << fmd_result.length << " FMD matches, " << 
-    fmd_result_forward.length << " FMD forward matches, " << occurrences << 
+  std::cout << "Got " << length(fmd_result) << " FMD matches, " << 
+    length(fmd_result_forward) << " FMD forward matches, " << occurrences << 
     " RLCSA matches" << std::endl;
+    
+  std::cout << "FMD results:" << std::endl;
+  print_results(pair_type(fmd_result.forward_start, fmd_result.forward_start + fmd_result.length), fmd, mode, len, context);
   
+  std::cout << "FMD forward results:" << std::endl;
+  print_results(pair_type(fmd_result_forward.forward_start, fmd_result_forward.forward_start + fmd_result_forward.length), fmd, mode, len, context);
+  
+  std::cout << "RLCSA results:" << std::endl;
+  print_results(result_range, fmd, mode, len, context);
+ 
+  return 0;
+}
+ 
+/**
+ * Print out a result range from the given FMD according to the given mode. In
+ * CONTEXT mode, print out context context characters around the pattern_length
+ * pattern characters.
+ */
+void print_results(pair_type result_range, const FMD& fmd, mode_type mode, usint pattern_length, usint context)
+{
+
+  usint occurrences = length(result_range);
+
   if(mode == TOTAL)
   {
     std::cout << occurrences << std::endl;
-    return 0;
+    return;
   }
   
   if(occurrences == 0)
@@ -95,7 +118,7 @@ int main(int argc, char** argv)
     {
       std::cout << 0 << std::endl;
     }
-    return 0;
+    return;
   }
 
   usint last_row = 0;
@@ -152,7 +175,7 @@ int main(int argc, char** argv)
     usint result_length = 0;
     for(usint i = 0; i < occurrences; i++)
     {
-      uchar* text = fmd.display(results[i], len, context, result_length);
+      uchar* text = fmd.display(results[i], pattern_length, context, result_length);
       std::cout.write((char*)text, result_length);
       std::cout << std::endl;
       delete[] text;
@@ -160,5 +183,4 @@ int main(int argc, char** argv)
   }
 
   delete[] results;
-  return 0;
 }

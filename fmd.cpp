@@ -8,7 +8,7 @@ FMDPosition::FMDPosition(usint forward_start, usint reverse_start, usint length)
 {
 }
 
-FMDPosition::FMDPosition(): forward_start(0), reverse_start(0), length(0)
+FMDPosition::FMDPosition(): forward_start(0), reverse_start(0), length(-1)
 {
 }
 
@@ -100,7 +100,7 @@ FMD::extend(FMDPosition range, usint c, bool backward) const
         answers[base].forward_start = start + iter.rank(range.forward_start,
           true);
         answers[base].length = iter.rank(range.forward_start + range.length, 
-          true) - iter.rank(range.forward_start, true);
+          false) - iter.rank(range.forward_start, true);
         
       }
         
@@ -184,7 +184,7 @@ FMD::fmdCount(const std::string& pattern, bool backward) const
     
     std::string::const_reverse_iterator iter = pattern.rbegin();
     index_position = this->getCharPosition((uchar)*iter);
-    if(index_position.length <= 0) { return index_position; }
+    if(isEmpty(index_position)) { return index_position; }
 
     std::cout << "Starting with " << index_position << std::endl;
 
@@ -193,7 +193,7 @@ FMD::fmdCount(const std::string& pattern, bool backward) const
       // Backwards extend with subsequent characters.
       index_position = this->extend(index_position, *iter, true);
       std::cout << "Now at " << index_position << " after " << *iter << std::endl;
-      if(index_position.length <= 0) { return EMPTY_FMD_POSITION; }
+      if(isEmpty(index_position)) { return EMPTY_FMD_POSITION; }
     }
   }
   else 
@@ -202,7 +202,7 @@ FMD::fmdCount(const std::string& pattern, bool backward) const
     
     std::string::const_iterator iter = pattern.begin();
     index_position = this->getCharPosition(reverse_complement((uchar)*iter));
-    if(index_position.length <= 0) { return index_position; }
+    if(isEmpty(index_position)) { return index_position; }
 
     std::cout << "Starting with " << index_position << std::endl;
 
@@ -212,7 +212,7 @@ FMD::fmdCount(const std::string& pattern, bool backward) const
       index_position = this->extend(index_position, *iter, false);
       std::cout << "Now at " << index_position << " after " << *iter << 
         std::endl;
-      if(index_position.length <= 0) { return EMPTY_FMD_POSITION; }
+      if(isEmpty(index_position)) { return EMPTY_FMD_POSITION; }
     }
     
   }

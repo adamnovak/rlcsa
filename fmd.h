@@ -72,6 +72,9 @@ inline usint reverse_complement(usint input) {
  * length. The ranges are stored as two start indices and a length. They can be
  * in either SA space (not counting the text start symbols at the beginning of
  * the BWT) or in BWT space.
+ *
+ * Range semantics are inclusive, so a length = 0 range holds 1 thing and its
+ * reverse complement.
  */
 struct FMDPosition {
   usint forward_start;
@@ -87,7 +90,25 @@ struct FMDPosition {
  */
 std::ostream& operator<< (std::ostream& o, FMDPosition const& position);
 
-const FMDPosition EMPTY_FMD_POSITION = FMDPosition(0, 0, 0);
+const FMDPosition EMPTY_FMD_POSITION = FMDPosition(0, 0, -1);
+
+/**
+ * Is an FMDPosition empty?
+ */
+inline bool isEmpty(const FMDPosition& position)
+{
+  return position.length < 0;
+}
+
+/**
+ * Return the actual number of matches represented by an FMDPosition.
+ */
+inline usint length(const FMDPosition& position)
+{
+  return position.length + 1;
+}
+
+
 
 /**
  * Defines an RLCSA index derivative that represents an FMD-index: an index of
