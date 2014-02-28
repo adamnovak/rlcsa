@@ -99,7 +99,7 @@ FMD::extend(FMDPosition range, usint c, bool backward) const
           
         // Make sure rank and select work reasonably.
           
-        for(int i = -2; i < range.length + 1; i++) {
+        /*for(int i = -2; i < range.length + 1; i++) {
           DEBUG(std::cout << "\t\trank(" << range.forward_start + i << ", true)=" <<
             iter.rank(range.forward_start + i, true) << std::endl;)
         }
@@ -110,7 +110,7 @@ FMD::extend(FMDPosition range, usint c, bool backward) const
         
           DEBUG(std::cout << "\t\tselect(" << i << ")=" << 
             iter.select(i) << std::endl;)
-        }
+        }*/
         
       }
         
@@ -235,8 +235,10 @@ FMD::retract(FMDPosition range, usint c, bool backward) const
     // and the inverse of rank(i, true).
     original.forward_start = iter.select(range.forward_start - start - 1);
     
-    DEBUG(std::cout << "\tOriginal forward_start was " <<
+    DEBUG(std::cout << "\tOriginal forward range contains " <<
       original.forward_start << std::endl;)
+      
+    // Work out something from reverse range
       
     return original;
     
