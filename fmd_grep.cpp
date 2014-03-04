@@ -6,7 +6,7 @@
 using namespace CSA;
 
 
-enum mode_type { COUNT, TOTAL, START, RELATIVE, DISPLAY, CONTEXT };
+enum mode_type { COUNT, TOTAL, START, RELATIVE, DISPLAY, MAPPING, CONTEXT };
 
 void print_results(pair_type result_range, const FMD& fmd, mode_type mode, usint pattern_length, usint context);
 
@@ -17,6 +17,7 @@ void printUsage()
   std::cout << "  -t    print the total number of occurrences" << std::endl;
   std::cout << "  -s    print the start positions of matches" << std::endl;
   std::cout << "  -r    print the relative start positions of matches (sequence, position)" << std::endl;
+  std::cout << "  -m    map the pattern and print relative position for each mapped base" << std::endl;
   std::cout << "  -NUM  display NUM characters of leading and trailing context instead of" << std::endl;
   std::cout << "        the entire line" << std::endl;
 }
@@ -53,6 +54,10 @@ int main(int argc, char** argv)
     {
       mode = RELATIVE;
     }
+    else if(std::string("-m").compare(argv[1]) == 0)
+    {
+      mode = MAPPING;
+    }
     else
     {
       mode = CONTEXT;
@@ -71,27 +76,62 @@ int main(int argc, char** argv)
     return 3;
   }
 
-  usint len = std::string(argv[pattern_arg]).length();
-  pair_type result_range = fmd.count(argv[pattern_arg]);
-  usint occurrences = length(result_range);
-  
-  // Try the alternative double-ended backwards search
-  FMDPosition fmd_result = fmd.fmdCount(argv[pattern_arg], true);
-  // And also forwards search
-  FMDPosition fmd_result_forward = fmd.fmdCount(argv[pattern_arg], false);
-  
-  std::cout << "Got " << length(fmd_result) << " FMD matches, " << 
-    length(fmd_result_forward) << " FMD forward matches, " << occurrences << 
-    " RLCSA matches" << std::endl;
+  std::string pattern = argv[pattern_arg];
+
+  if(mode == MAPPING)
+  {
+    // Mapping mode is special. We are mapping all the bases in the pattern. We
+    // need to do our own computation and our own output.
     
-  std::cout << "FMD results:" << std::endl;
-  print_results(pair_type(fmd_result.forward_start, fmd_result.forward_start + fmd_result.length), fmd, mode, len, context);
-  
-  std::cout << "FMD forward results:" << std::endl;
-  print_results(pair_type(fmd_result_forward.forward_start, fmd_result_forward.forward_start + fmd_result_forward.length), fmd, mode, len, context);
-  
-  std::cout << "RLCSA results:" << std::endl;
-  print_results(result_range, fmd, mode, len, context);
+    // This holds all the per-position mapping results from the index.
+    std::vector<Mapping> results = fmd.map(pattern);
+    
+    for(usint i = 0; i < results.size(); i++)
+    {
+      if(results[i].is_mapped)
+      {
+        // We mapped. Print this base with its mapping location
+        std::cout << pattern[i] << ": " << results[i].location.first << ", " <<
+          results[i].location.second << std::endl;
+      }
+      else
+      {
+        // We didn't map this base. Print just the base
+        std::cout << pattern[i] << std::endl;
+      }
+    }
+    
+  }
+  else
+  {
+    // All the other modes are just counting/finding the occurrences of the
+    // pattern.
+
+    usint len = pattern.length();
+    pair_type result_range = fmd.count(pattern);
+    usint occurrences = length(result_range);
+    
+    // Try the alternative double-ended backwards search
+    FMDPosition fmd_result = fmd.fmdCount(pattern, true);
+    // And also forwards search
+    FMDPosition fmd_result_forward = fmd.fmdCount(pattern, false);
+    
+    std::cout << "Got " << length(fmd_result) << " FMD matches, " << 
+      length(fmd_result_forward) << " FMD forward matches, " << occurrences << 
+      " RLCSA matches" << std::endl;
+      
+    std::cout << "FMD results:" << std::endl;
+    print_results(pair_type(fmd_result.forward_start, fmd_result.forward_start +
+      fmd_result.length), fmd, mode, len, context);
+    
+    std::cout << "FMD forward results:" << std::endl;
+    print_results(pair_type(fmd_result_forward.forward_start, 
+      fmd_result_forward.forward_start + fmd_result_forward.length), fmd, mode, 
+      len, context);
+    
+    std::cout << "RLCSA results:" << std::endl;
+    print_results(result_range, fmd, mode, len, context);
+  }
  
   return 0;
 }

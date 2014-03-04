@@ -88,12 +88,19 @@ inline usint reverse_complement(usint input) {
  * Range semantics are inclusive, so a length = 0 range holds 1 thing and its
  * reverse complement.
  */
-struct FMDPosition {
+struct FMDPosition
+{
   usint forward_start;
   usint reverse_start;
+  // Length 0 = only the entry at start/end
   sint length;
   FMDPosition();
   FMDPosition(usint forward_start, usint reverse_start, usint length);
+  /** 
+   * Flip the FMDPosition around so the reverse complement interval is the
+   * forward interval and visa versa.
+   */
+  FMDPosition flip() const;
 };
 
 /**
@@ -120,7 +127,33 @@ inline usint length(const FMDPosition& position)
   return position.length + 1;
 }
 
+/**
+ * Represents a mapping between a base in a string and a (text, index) position
+ * in the FMD-index. Contains the text and offset to which a character maps, and
+ * a flag to say if it represents a real mapping or a result of "unmapped".
+ */
+struct Mapping
+{
+  // Holds (text, position)
+  pair_type location;
+  bool is_mapped;
+  Mapping();
+  Mapping(pair_type location, bool is_mapped=true);
+};
 
+/**
+ * A triple to hold the return values from FMD::mapPosition(). Holds a flag for
+ * whether the mapping succeeded or not, an FMDPosition corresponding either to
+ * where the character mapped or the longest search starting at the character
+ * that did actually return results, and the number of characters in the
+ * FMDPosition's search pattern.
+ */
+struct MapAttemptResult
+{
+  bool is_mapped;
+  FMDPosition position;
+  uint characters;
+};
 
 /**
  * Defines an RLCSA index derivative that represents an FMD-index: an index of
@@ -150,6 +183,8 @@ class FMD : public RLCSA
      * Retract a search by a character, either backward or forward. Reverses a
      * call to extend, but can also retract one way when the extend call was
      * made going the other way. Ranges are in BWT coordinates.
+     * 
+     * TODO: Doesn't actually work yet.
      */
     FMDPosition retract(FMDPosition range, usint c, bool backward) const;
     
@@ -159,6 +194,37 @@ class FMD : public RLCSA
      */
     FMDPosition fmdCount(const std::string& pattern, bool backward = true)
       const;
+      
+    /**
+     * Try left-mapping the given index in the given string, starting from
+     * scratch. Start a backwards search at that index in the string and extend
+     * left until we map to exactly one or zero places. Returns true or false
+     * depending on whether we map, an FMDPosition (in BWT coordinates) that, if
+     * nonempty, can be extended right to try and map the next base to the
+     * right, and the number of characters in the pattern used to make that
+     * FMDPosition.
+     *
+     * If the mapping succeeded, the FMDPosition returned has one thing in it,
+     * which is the mapping upstream context.
+     *
+     * Index must be a valid character position in the string.
+     */
+    MapAttemptResult mapPosition(const std::string& pattern,
+      usint index) const;
+      
+    /**
+     * Attempt to map each base in the query string to a (text, position) pair.
+     * The vector returned will have one entry for each character in the
+     * selected range.
+     * 
+     * Optionally a start and length for the region to map can be specified. The
+     * whole string will be used as context, but only that region will actually
+     * be mapped. A length of -1 means to use the entire string after the start,
+     * and is the default.
+     */
+    std::vector<Mapping> map(const std::string& query, usint start = 0,
+      sint length = -1) const;
+      
   private:
     /**
      * Get an FMDPosition covering the whole SA.

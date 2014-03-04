@@ -12,12 +12,28 @@ FMDPosition::FMDPosition(): forward_start(0), reverse_start(0), length(-1)
 {
 }
 
+FMDPosition
+FMDPosition::flip() const
+{
+  // Swap the two intervals of the bi-interval
+  return FMDPosition(reverse_start, forward_start, length);
+}
+
 std::ostream& operator<< (std::ostream& o, FMDPosition const& position)
 {
   // Report both the ranges that we represent.
   return o << position.forward_start << "-" << 
     (position.forward_start + position.length) << "|" << 
     position.reverse_start << "-" << (position.reverse_start + position.length);
+}
+
+Mapping::Mapping(): location(0, 0), is_mapped(false)
+{
+}
+
+Mapping::Mapping(pair_type location, bool is_mapped): location(location), 
+  is_mapped(is_mapped)
+{
 }
 
 FMD::FMD(const std::string& base_name, bool print): 
@@ -97,21 +113,6 @@ FMD::extend(FMDPosition range, usint c, bool backward) const
         answers[base].length = iter.rank(range.forward_start + range.length, 
           false) - iter.rank(range.forward_start, true);
           
-        // Make sure rank and select work reasonably.
-          
-        /*for(int i = -2; i < range.length + 1; i++) {
-          DEBUG(std::cout << "\t\trank(" << range.forward_start + i << ", true)=" <<
-            iter.rank(range.forward_start + i, true) << std::endl;)
-        }
-          
-        usint rank = iter.rank(range.forward_start, true);
-        
-        for(int i = rank; i >= 0; i--) {
-        
-          DEBUG(std::cout << "\t\tselect(" << i << ")=" << 
-            iter.select(i) << std::endl;)
-        }*/
-        
       }
         
       
@@ -184,18 +185,9 @@ FMD::extend(FMDPosition range, usint c, bool backward) const
   }
   else
   {
-  
-    // Flip the input interval.
-    FMDPosition reverse(range.reverse_start, range.forward_start, range.length);
-    
-    // Do backwards search with the reverse complement of the base
-    FMDPosition extended = this->extend(reverse, reverse_complement(c),
-      true);
-    
-    // Reverse the interval again
-    FMDPosition forward(extended.reverse_start, extended.forward_start,
-      extended.length);
-    return forward;
+    // Flip the interval, do backwards search with the reverse complement of the
+    // base, and then flip back.
+    return this->extend(range.flip(), reverse_complement(c), true).flip();
   
   }
 }
@@ -246,25 +238,11 @@ FMD::retract(FMDPosition range, usint c, bool backward) const
   else
   {
   
-    // Flip the input interval.
-    FMDPosition reverse(range.reverse_start, range.forward_start, range.length);
-    
-    // Do backwards retraction with the reverse complement of the base
-    FMDPosition retracted = this->retract(reverse, reverse_complement(c),
-      true);
-    
-    // Reverse the interval again
-    FMDPosition forward(retracted.reverse_start, retracted.forward_start,
-      retracted.length);
-    return forward;
+    // Flip the interval, do backwards retract with the reverse complement of
+    // the base, and then flip back.
+    return this->retract(range.flip(), reverse_complement(c), true).flip();
   
   }
-}
-
-FMDPosition
-FMD::getSAPosition() const
-{
-  return FMDPosition(0, 0, this->data_size - 1);
 }
 
 FMDPosition
@@ -294,7 +272,7 @@ FMD::fmdCount(const std::string& pattern, bool backward) const
       DEBUG(std::cout << "Now at " << index_position << " after " << *iter <<
         std::endl;)
       // Test out retracting
-      this->retract(index_position, *iter, true);
+      DEBUG(this->retract(index_position, *iter, true);)
       if(isEmpty(index_position)) { return EMPTY_FMD_POSITION; }
     }
   }
@@ -315,7 +293,7 @@ FMD::fmdCount(const std::string& pattern, bool backward) const
       DEBUG(std::cout << "Now at " << index_position << " after " << *iter << 
         std::endl;)
       // Test out retracting
-      this->retract(index_position, *iter, false);
+      DEBUG(this->retract(index_position, *iter, false);)
       if(isEmpty(index_position)) { return EMPTY_FMD_POSITION; }
     }
     
@@ -324,6 +302,194 @@ FMD::fmdCount(const std::string& pattern, bool backward) const
   this->convertToSAPosition(index_position);
 
   return index_position;
+}
+
+MapAttemptResult
+FMD::mapPosition(const std::string& pattern, usint index) const
+{
+  // Initialize the struct we will use to return our somewhat complex result.
+  // Contains the FMDPosition (which we work in), an is_mapped flag, and a
+  // variable counting the number of extensions made to the FMDPosition.
+  MapAttemptResult result;
+  
+  // Do a backward search.
+  // Start at the given index, and get the starting range for that character.
+  result.is_mapped = false;
+  result.position = this->getCharPosition(pattern[index]);
+  result.characters = 1;
+  if(isEmpty(result.position))
+  {
+    // This character isn't even in it. Just return the result with an empty
+    // FMDPosition; the next character we want to map is going to have to deal
+    // with having some never-before-seen character right upstream of it.
+    return result;
+  }
+
+  DEBUG(std::cout << "Starting with " << result.position << std::endl;)
+
+  for(index--; index >= 0; index--)
+  {
+    // Backwards extend with subsequent characters.
+    FMDPosition next_position = this->extend(result.position, pattern[index],
+      true);
+      
+    DEBUG(std::cout << "Now at " << next_position << " after " << 
+      pattern[index] << std::endl;)
+    if(isEmpty(next_position))
+    {
+      // The next place we would go is empty, so return the result holding the
+      // last position.
+      return result;
+    }
+    else if(length(next_position) == 1)
+    {
+      // We have successfully mapped to exactly one place. Update our result to
+      // reflect the additional extension and our success, and return it.
+      result.position = next_position;
+      result.characters++;
+      result.is_mapped = true;
+      return result;      
+    }
+    
+    // Otherwise, we still map to a plurality of places. Record the extension
+    // and loop again.
+    result.position = next_position;
+    result.characters++;
+  }
+  
+  // If we get here, we ran out of upstream context and still map to multiple
+  // places. Just give our multi-mapping FMDPosition and unmapped result.
+  return result;
+
+}
+
+std::vector<Mapping>
+FMD::map(const std::string& query, usint start, sint length) const
+{
+
+  // Fix up the length parameter if it is -1: that means the whole rest of the
+  // string.
+  length = query.length() - start;
+  
+  // We need a vector to return.
+  std::vector<Mapping> mappings;
+  
+  // Keep around the result that we get from the single-character mapping
+  // function. We use it as our working state to trackour FMDPosition and how
+  // many characters we've extended by. We use the is_mapped flag to indicate
+  // whether the current iteration is an extension or a restart.
+  MapAttemptResult location;
+  // Make sure the scratch position is empty so we re-start on the first base
+  location.position = EMPTY_FMD_POSITION;
+  
+  for(sint i = start; i < length; i++)
+  {
+    if(isEmpty(location.position))
+    {
+      DEBUG(std::cout << "Starting over by mapping position " << i <<
+        std::endl;)
+      // We do not currently have a non-empty FMDPosition to extend. Start over
+      // by mapping this character by itself.
+      location = this->mapPosition(query, i);
+    }
+    else
+    {
+      DEBUG(std::cout << "Extending with position " << i << std::endl;)
+      // The last base either mapped successfully or failed due to multi-
+      // mapping. Try to extend the FMDPosition we have to the right (not
+      // backwards) with the next base.
+      location.position = this->extend(location.position, query[i], false);
+      location.characters++;
+    }
+    
+    if(location.is_mapped && CSA::length(location.position) == 1)
+    {
+      // We need to explicitly namespace our call to the useful length function
+      // sicne we also have a length local. TODO: put length function inside the
+      // FMDPosition struct as a method.
+      
+      // It mapped. We didn't do a re-start and fail, and there's exactly one
+      // thing in our interval.
+        
+      // Take the first (only) thing in the bi-interval's forward strand side,
+      // and convert to SA coordinates.
+      usint converted_start = location.position.forward_start;
+      convertToSAIndex(converted_start);
+      
+      // Locate it, and then report position as a (text, offset) pair. This will
+      // give us the position of the first base in the pattern, which lets us
+      // infer the position of the last base in the pattern.
+      pair_type text_location = getRelativePosition(locate(converted_start));
+        
+      DEBUG(std::cout << "Mapped " << location.characters << 
+        " context to text " << text_location.first << " position " << 
+        text_location.second << std::endl;)
+        
+      // Correct to the position of the last base in the pattern, by offsetting
+      // by the length of the pattern that was used. A 2-character pattern means
+      // we need to go 1 further right in the string it maps to to find where
+      // its rightmost character maps.
+      text_location.second += (location.characters - 1);
+      
+      // Add a Mapping for this mapped base.
+      mappings.push_back(Mapping(text_location));
+      
+      // We definitely have a non-empty FMDPosition to continue from
+      
+    }
+    else
+    {
+    
+      DEBUG(std::cout << "Failed (" << CSA::length(location.position) << 
+        " options for " << location.characters << " context)." << std::endl;)
+        
+      if(location.is_mapped && isEmpty(location.position))
+      {
+        // We extended right until we got no results. We need to try this base
+        // again, in case we tried with a too-long left context.
+        
+        DEBUG(std::cout << "Restarting from here..." << std::endl;)
+        
+        // Move the loop index back
+        i--;
+        
+        // Since the FMDPosition is empty, on the next iteration we will retry
+        // this base.
+        
+      }
+      else
+      {
+        // It didn't map for some other reason:
+        // - It was an initial mapping with too little left context to be unique
+        // - It was an initial mapping with a nonexistent left context
+        // - It was an extension that was multimapped and still is
+        
+        // In none of these cases will re-starting from this base help at all.
+        // If we just restarted here, we don't want to do it again. If it was
+        // multimapped before, it had as much left context as it could take
+        // without running out of string or getting no results.
+      
+        // It didn't map. Add an empty/unmapped Mapping.
+        mappings.push_back(Mapping());
+        
+        // Mark that the next iteration will be an extension (if we had any
+        // results this iteration; if not it will just restart)
+        location.is_mapped = true;
+        
+      }
+    }
+  
+  }
+  
+  // We've gone through and attempted the whole string. Give back our answers.
+  return mappings;
+  
+}
+
+FMDPosition
+FMD::getSAPosition() const
+{
+  return FMDPosition(0, 0, this->data_size - 1);
 }
 
 FMDPosition
