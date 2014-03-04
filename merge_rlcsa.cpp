@@ -26,7 +26,7 @@ main(int argc, char** argv)
   std::cout << "RLCSA merger" << std::endl;
   if(argc < 3)
   {
-    std::cout << "Usage: merge_rlcsa [-threads] original additional" << std::endl;
+    std::cout << "Usage: merge_rlcsa [-threads] original additional [additional2...]" << std::endl;
     return 1;
   }
 
