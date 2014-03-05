@@ -5,8 +5,8 @@
  * Define a macro for easily compiling in/out detailed debugging information
  * about FMD search.
  */
-#define DEBUG(op) op
-//#define DEBUG(op)
+//#define DEBUG(op) op
+#define DEBUG(op)
 
 #define INFO(op) op
 //#define INFO(op)
