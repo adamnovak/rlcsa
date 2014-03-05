@@ -83,8 +83,20 @@ int main(int argc, char** argv)
     // Mapping mode is special. We are mapping all the bases in the pattern. We
     // need to do our own computation and our own output.
     
-    // This holds all the per-position mapping results from the index.
-    std::vector<Mapping> results = fmd.map(pattern);
+    std::vector<Mapping> results;
+    
+    for(int i = 0; i < 10000; i++)
+    {
+      if(i % 1000 == 0)
+      {
+        std::cout << "Mapping " << i << std::endl;
+      }
+    
+      // Map a lot of times to test
+      
+      // This holds all the per-position mapping results from the index.
+      results = fmd.map(pattern);
+    }
     
     for(usint i = 0; i < results.size(); i++)
     {
