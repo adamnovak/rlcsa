@@ -272,7 +272,7 @@ FMD::fmdCount(const std::string& pattern, bool backward) const
       DEBUG(std::cout << "Now at " << index_position << " after " << *iter <<
         std::endl;)
       // Test out retracting
-      DEBUG(this->retract(index_position, *iter, true);)
+      //DEBUG(this->retract(index_position, *iter, true);)
       if(isEmpty(index_position)) { return EMPTY_FMD_POSITION; }
     }
   }
@@ -293,7 +293,7 @@ FMD::fmdCount(const std::string& pattern, bool backward) const
       DEBUG(std::cout << "Now at " << index_position << " after " << *iter << 
         std::endl;)
       // Test out retracting
-      DEBUG(this->retract(index_position, *iter, false);)
+      //DEBUG(this->retract(index_position, *iter, false);)
       if(isEmpty(index_position)) { return EMPTY_FMD_POSITION; }
     }
     
@@ -386,7 +386,7 @@ FMD::map(const std::string& query, usint start, sint length) const
   {
     if(isEmpty(location.position))
     {
-      DEBUG(std::cout << "Starting over by mapping position " << i <<
+      INFO(std::cout << "Starting over by mapping position " << i <<
         std::endl;)
       // We do not currently have a non-empty FMDPosition to extend. Start over
       // by mapping this character by itself.
@@ -394,7 +394,7 @@ FMD::map(const std::string& query, usint start, sint length) const
     }
     else
     {
-      DEBUG(std::cout << "Extending with position " << i << std::endl;)
+      INFO(std::cout << "Extending with position " << i << std::endl;)
       // The last base either mapped successfully or failed due to multi-
       // mapping. Try to extend the FMDPosition we have to the right (not
       // backwards) with the next base.
@@ -421,7 +421,7 @@ FMD::map(const std::string& query, usint start, sint length) const
       // infer the position of the last base in the pattern.
       pair_type text_location = getRelativePosition(locate(converted_start));
         
-      DEBUG(std::cout << "Mapped " << location.characters << 
+      INFO(std::cout << "Mapped " << location.characters << 
         " context to text " << text_location.first << " position " << 
         text_location.second << std::endl;)
         
@@ -440,7 +440,7 @@ FMD::map(const std::string& query, usint start, sint length) const
     else
     {
     
-      DEBUG(std::cout << "Failed (" << CSA::length(location.position) << 
+      INFO(std::cout << "Failed (" << CSA::length(location.position) << 
         " options for " << location.characters << " context)." << std::endl;)
         
       if(location.is_mapped && isEmpty(location.position))
@@ -448,7 +448,7 @@ FMD::map(const std::string& query, usint start, sint length) const
         // We extended right until we got no results. We need to try this base
         // again, in case we tried with a too-long left context.
         
-        DEBUG(std::cout << "Restarting from here..." << std::endl;)
+        INFO(std::cout << "Restarting from here..." << std::endl;)
         
         // Move the loop index back
         i--;

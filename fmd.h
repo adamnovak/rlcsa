@@ -8,6 +8,9 @@
 #define DEBUG(op) op
 //#define DEBUG(op)
 
+#define INFO(op) op
+//#define INFO(op)
+
 #include <fstream>
 #include <iostream>
 #include <vector>
