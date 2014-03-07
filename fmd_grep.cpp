@@ -85,9 +85,9 @@ int main(int argc, char** argv)
     
     std::vector<Mapping> results;
     
-    for(int i = 0; i < 10000; i++)
+    for(int i = 0; i < 1000; i++)
     {
-      if(i % 1000 == 0)
+      if(i % 100 == 0)
       {
         std::cout << "Mapping " << i << std::endl;
       }

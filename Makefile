@@ -14,8 +14,9 @@ VECTOR_FLAGS = $(PSI_FLAGS) $(LCP_FLAGS) $(SA_FLAGS)
 # PSI_FLAGS = -DUSE_NIBBLE_VECTORS
 # LCP_FLAGS = -DSUCCINCT_LCP_VECTOR
 # SA_FLAGS = -DSUCCINCT_SA_VECTOR
+DEBUG_FLAGS = -g -pg
 
-CXXFLAGS = -Wall -O3 $(SIZE_FLAGS) $(PARALLEL_FLAGS) $(VECTOR_FLAGS)
+CXXFLAGS = -Wall -O3 $(DEBUG_FLAGS) $(SIZE_FLAGS) $(PARALLEL_FLAGS) $(VECTOR_FLAGS)
 OBJS = rlcsa.o rlcsa_builder.o fmd.o sasamples.o alphabet.o \
 lcpsamples.o sampler.o suffixarray.o adaptive_samples.o docarray.o \
 bits/array.o bits/bitbuffer.o bits/multiarray.o bits/bitvector.o bits/deltavector.o \

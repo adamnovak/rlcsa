@@ -108,10 +108,13 @@ FMD::extend(FMDPosition range, usint c, bool backward) const
       
         // Fill in the forward-strand start positions and range lengths for each
         // base's answer. TODO: do we want at_least set or not? What does it do?
-        answers[base].forward_start = start + iter.rank(range.forward_start,
-          true);
+        
+        // First cache the forward_start rank we re-use
+        usint forward_start_rank = iter.rank(range.forward_start, true);
+        
+        answers[base].forward_start = start + forward_start_rank;
         answers[base].length = iter.rank(range.forward_start + range.length, 
-          false) - iter.rank(range.forward_start, true);
+          false) - forward_start_rank;
           
       }
         

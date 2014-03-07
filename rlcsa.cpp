@@ -290,20 +290,14 @@ RLCSA::count(const std::string& pattern) const
   std::string::const_reverse_iterator iter = pattern.rbegin();
   pair_type index_range = this->getCharRange((uchar)*iter);
   
-  std::cout << "RLCSA starting with " << index_range.first << "-" << index_range.second << std::endl;
-  
   if(isEmpty(index_range)) { return index_range; }
 
   for(++iter; iter != pattern.rend(); ++iter)
   {
     index_range = this->LF(index_range, (uchar)*iter);
     
-    std::cout << "RLCSA after " << (uchar)*iter << " at " << index_range.first << "-" << index_range.second << std::endl;
-    
     if(isEmpty(index_range)) { return EMPTY_PAIR; }
   }
-  
-  std::cout << "RLCSA ending with " << index_range.first << "-" << index_range.second << std::endl;
   
   this->convertToSARange(index_range);
 
