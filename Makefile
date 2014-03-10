@@ -16,15 +16,21 @@ VECTOR_FLAGS = $(PSI_FLAGS) $(LCP_FLAGS) $(SA_FLAGS)
 # SA_FLAGS = -DSUCCINCT_SA_VECTOR
 DEBUG_FLAGS = -g -pg
 
-CXXFLAGS = -Wall -O3 $(DEBUG_FLAGS) $(SIZE_FLAGS) $(PARALLEL_FLAGS) $(VECTOR_FLAGS)
+# Flags to use for SWIG. Adjust for your platform
+SWIG_FLAGS = -I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/linux -fno-strict-aliasing
+JAVA_PACKAGE = fi.helsinki.cs.rlcsa
+
+
+CXXFLAGS = -Wall -O3 -fPIC $(DEBUG_FLAGS) $(SIZE_FLAGS) $(PARALLEL_FLAGS) $(VECTOR_FLAGS)
 OBJS = rlcsa.o rlcsa_builder.o fmd.o sasamples.o alphabet.o \
 lcpsamples.o sampler.o suffixarray.o adaptive_samples.o docarray.o \
 bits/array.o bits/bitbuffer.o bits/multiarray.o bits/bitvector.o bits/deltavector.o \
 bits/rlevector.o bits/nibblevector.o bits/succinctvector.o misc/parameters.o misc/utils.o
+SWIG_OBJS = rlcsa_wrap.o fmd_wrap.o
 
 PROGRAMS = rlcsa_test lcp_test parallel_build build_rlcsa merge_rlcsa build_sa \
-locate_test display_test document_graph read_bwt extract_sequence rlcsa_grep build_plcp \
-sample_lcp sampler_test ss_test utils/extract_text utils/convert_patterns \
+locate_test display_test document_graph read_bwt extract_sequence rlcsa_grep fmd_grep \
+build_plcp sample_lcp sampler_test ss_test utils/extract_text utils/convert_patterns \
 utils/split_text utils/sort_wikipedia utils/genpatterns
 
 VPATH = bits:misc:utils
@@ -33,9 +39,25 @@ VPATH = bits:misc:utils
 default: parallel_build build_rlcsa merge_rlcsa rlcsa_test sampler_test display_test \
 document_graph
 
+jar: rlcsa.jar
+
+rlcsa.jar: rlcsa.so RLCSANativeLoader.java
+	mkdir -p jar
+	javac java/*.java RLCSANativeLoader.java -d jar
+	cp rlcsa.so jar/
+	jar cf $@ -C jar .
+
+# Install the jar in the Maven local repository. See
+# http://maven.apache.org/guides/mini/guide-3rd-party-jars-local.html
+jar-install: rlcsa.jar
+	mvn install:install-file -Dfile=rlcsa.jar -DgroupId=fi.helsinki.cs \
+	-DartifactId=rlcsa -Dversion=1.0.0-SNAPSHOT -Dpackaging=jar
 
 rlcsa.a: $(OBJS)
 	ar rcs rlcsa.a $(OBJS)
+	
+rlcsa.so: $(OBJS) $(SWIG_OBJS)
+	$(LD) $(LDFLAGS) -shared -o rlcsa.so  $(OBJS) $(SWIG_OBJS)
 
 depend:
 	g++ -MM *.cpp bits/*.cpp misc/*.cpp utils/*.cpp > dependencies.mk
@@ -106,15 +128,28 @@ sort_wikipedia: sort_wikipedia.o utils.o
 genpatterns: genpatterns.c
 	gcc -O3 -Wall -o utils/genpatterns utils/genpatterns.c
 
+# SWIG C++ file generation and compilation.	
+%_wrap.o: %_wrap.cxx
+	$(CXX) $(INCLUDES) $(SWIG_FLAGS) $(CXXFLAGS) $(LDFLAGS) -c -o $@ $^
+	
+%_wrap.cxx: %.i
+	mkdir -p java
+	swig -c++ -java -outdir java -package $(JAVA_PACKAGE) $^
+
 clean:
 	rm -f rlcsa.a
+	rm -f rlcsa.so
 	rm -f $(PROGRAMS)
 	rm -f *.o bits/*.o misc/*.o utils/*.o
+	rm -rf java/
+	rm -f *_wrap.cxx
+	rm -rf jar/
+	rm -f rlcsa.jar
 
 package:
 	mkdir rlcsa
 	mkdir rlcsa/bits rlcsa/misc rlcsa/utils
-	cp LICENSE Makefile README dependencies.mk *.cpp *.h rlcsa
+	cp LICENSE Makefile README dependencies.mk *.cpp *.h *.i *.java rlcsa
 	cp bits/*.cpp bits/*.h rlcsa/bits
 	cp misc/*.cpp misc/*.h rlcsa/misc
 	cp utils/*.cpp utils/*.py rlcsa/utils

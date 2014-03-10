@@ -60,7 +60,7 @@ class RLCSA
 //  CONSTRUCTION
 //--------------------------------------------------------------------------
 
-    const static usint ENDPOINT_BLOCK_SIZE = 16;
+    static const usint ENDPOINT_BLOCK_SIZE = 16;
 
     explicit RLCSA(const std::string& base_name, bool print = false);
 

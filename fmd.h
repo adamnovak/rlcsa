@@ -33,13 +33,13 @@
 namespace CSA
 {
 
-const static usint NUM_BASES = 5;
+static const usint NUM_BASES = 5;
 
 // This holds the bases in alphabetcal order by reverse complement. The only
 // time the order of the bases matters is when doing the iterative scoping out
 // of the reverse complement intervals in the extension procedure, and there we
 // need to go through them in this order.
-const static std::string BASES = "TGCNA";
+static const std::string BASES = "TGCNA";
 
 
 /**
