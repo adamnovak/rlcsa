@@ -44,7 +44,9 @@ jar: rlcsa.jar
 rlcsa.jar: rlcsa.so RLCSANativeLoader.java
 	mkdir -p jar
 	javac java/*.java RLCSANativeLoader.java -d jar
-	cp rlcsa.so jar/
+	# Make the directory for the Java package
+	mkdir -p jar/`echo "$(JAVA_PACKAGE)" | sed s/\\\\./\\\\//g`
+	cp rlcsa.so jar/`echo "$(JAVA_PACKAGE)" | sed s/\\\\./\\\\//g`/
 	jar cf $@ -C jar .
 
 # Install the jar in the Maven local repository. See
@@ -57,7 +59,7 @@ rlcsa.a: $(OBJS)
 	ar rcs rlcsa.a $(OBJS)
 	
 rlcsa.so: $(OBJS) $(SWIG_OBJS)
-	$(LD) $(LDFLAGS) -shared -o rlcsa.so  $(OBJS) $(SWIG_OBJS)
+	$(CXX) $(LDFLAGS) -shared -o rlcsa.so  $(OBJS) $(SWIG_OBJS)
 
 depend:
 	g++ -MM *.cpp bits/*.cpp misc/*.cpp utils/*.cpp > dependencies.mk
