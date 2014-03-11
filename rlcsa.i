@@ -9,6 +9,9 @@
 // And pointer arrays
 %include "carrays.i"
 
+// And pointers
+%include "cpointer.i"
+
 %{
 #include "rlcsa.h"
 using namespace CSA;
@@ -32,6 +35,9 @@ typedef std::pair<usint, usint> pair_type;
 
 // We need to be able to work with arrays of usint
 %array_functions(usint,USIntArray);
+
+// And with pointers to usint
+%pointer_functions(usint,USIntPointer);
 
 %include "rlcsa.h"
 
