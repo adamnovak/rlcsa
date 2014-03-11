@@ -11,6 +11,18 @@
 using namespace CSA;
 %}
 
+#ifdef MASSIVE_DATA_RLCSA
+
+typedef unsigned long usint;
+typedef signed long   sint;
+
+#else
+
+typedef unsigned int  usint;
+typedef signed int    sint;
+
+#endif
+
 // Java needs to work with vectors of mappings coming back from the map method.
 %template(MappingVector) std::vector<Mapping>; 
 
