@@ -39,6 +39,13 @@ typedef std::pair<usint, usint> pair_type;
 // And with pointers to usint
 %pointer_functions(usint,USIntPointer);
 
+// Whenever any of the JNI classes loads, load the native library.
+%pragma(java) jniclasscode=%{
+  static {
+    RLCSANativeLoader.load();
+  }
+%}
+
 %include "rlcsa.h"
 
 // We also take the important inlines in misc/definitions.h for working with

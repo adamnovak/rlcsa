@@ -29,6 +29,13 @@ typedef signed int    sint;
 // Java can't handle this operator name.
 %rename(leftShift) operator<<(std::ostream& o, FMDPosition const& position);
 
+// Whenever any of the JNI classes loads, load the native library.
+%pragma(java) jniclasscode=%{
+  static {
+    RLCSANativeLoader.load();
+  }
+%}
+
 %import "rlcsa.h"
 %include "fmd.h"
 

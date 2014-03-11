@@ -17,7 +17,12 @@ import java.nio.file.Path;
  * Licensed under the MIT license.
  */
 public class RLCSANativeLoader {
-    static {
+    static boolean loaded = false;
+    static void load() {
+        if(loaded) {
+            // Don't try and load twice.
+            return;
+        }
         try {
         
             // Read the library data out of our jar
@@ -57,6 +62,9 @@ public class RLCSANativeLoader {
             // <http://stackoverflow.com/a/15289277/402891>
 	        throw new ExceptionInInitializerError(e);
 	    }
+	    
+	    // Don't try to load again.
+	    loaded = true;
         
     }
 }
