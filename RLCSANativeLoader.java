@@ -19,7 +19,6 @@ import java.nio.file.Path;
 public class RLCSANativeLoader {
     static {
         try {
-            System.out.println("Loading RLCSA natives...");
         
             // Read the library data out of our jar
         	InputStream libraryData = 
@@ -29,7 +28,7 @@ public class RLCSANativeLoader {
                 // <http://frommyplayground.com/how-to-load-native-jni-library-
                 // from-jar/>
                 throw new FileNotFoundException(
-                    "RLCSA native library not in jar!");
+                    "Can't load rlcsa.so from RLCSA jar!");
             }
             
             // Make a temporary directory to hold the library
@@ -37,8 +36,6 @@ public class RLCSANativeLoader {
             
             // Make a Path for the file we're loading
             Path library = libraryDir.resolve("rlcsa.so");
-            
-            System.out.println("Extracting to " + library.toString());
             
             // Copy all the data over with the new NIO file copying method.
             Files.copy(libraryData, library);
@@ -53,7 +50,6 @@ public class RLCSANativeLoader {
             // Load the library
         	System.load(library.toFile().getAbsolutePath());
         	
-        	System.out.println("RLCSA library loaded");
 	    } catch(Exception e) {
 	        // Catch any ordinary "checked" exceptions and rethrow them as 
 	        // runtime exceptions, which are the only kind of exceptions static 

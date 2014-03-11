@@ -155,7 +155,7 @@ struct MapAttemptResult
 {
   bool is_mapped;
   FMDPosition position;
-  uint characters;
+  usint characters;
 };
 
 /**
