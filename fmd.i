@@ -24,7 +24,7 @@ typedef signed int    sint;
 #endif
 
 // Java needs to work with vectors of mappings coming back from the map method.
-%template(MappingVector) std::vector<Mapping>; 
+%template(MappingVector) std::vector<CSA::Mapping>; 
 
 // Java can't handle this operator name.
 %rename(leftShift) operator<<(std::ostream& o, FMDPosition const& position);
