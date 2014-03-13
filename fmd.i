@@ -53,7 +53,7 @@
 class RangeVectorIterator
 {
 public:
-  explicit RangeVectorIterator(const RangeVector& par);
+  explicit RangeVectorIterator(const CSA::RangeVector& par);
   ~RangeVectorIterator();
 
   usint rank(usint value, bool at_least = false);
