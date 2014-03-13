@@ -33,6 +33,12 @@
 namespace CSA
 {
 
+#ifdef USE_NIBBLE_VECTORS
+typedef NibbleVector  RangeVector;
+#else
+typedef RLEVector     RangeVector;
+#endif
+
 static const usint NUM_BASES = 5;
 
 // This holds the bases in alphabetcal order by reverse complement. The only
@@ -104,6 +110,36 @@ struct FMDPosition
    * forward interval and visa versa.
    */
   FMDPosition flip() const;
+  
+  /**
+   * Is an FMDPosition empty?
+   */
+  inline bool isEmpty() const
+  {
+    return length < 0;
+  }
+
+  /**
+   * Return the actual number of matches represented by an FMDPosition.
+   */
+  inline usint getLength() const
+  {
+    return length + 1;
+  }
+  
+  /**
+   * Return the index of the range that the forward-strand interval of this
+   * FMDPosition is contained in, or -1 if it is not contained in any such
+   * interval.
+   */
+  sint range(const RangeVector& ranges) const;
+  
+  /**
+   * Return the number of ranges that the forward-strand interval of this
+   * FMDPosition overlaps.
+   */
+  sint ranges(const RangeVector& ranges) const;
+  
 };
 
 /**
@@ -114,21 +150,7 @@ std::ostream& operator<< (std::ostream& o, FMDPosition const& position);
 
 const FMDPosition EMPTY_FMD_POSITION = FMDPosition(0, 0, -1);
 
-/**
- * Is an FMDPosition empty?
- */
-inline bool isEmpty(const FMDPosition& position)
-{
-  return position.length < 0;
-}
 
-/**
- * Return the actual number of matches represented by an FMDPosition.
- */
-inline usint length(const FMDPosition& position)
-{
-  return position.length + 1;
-}
 
 /**
  * Represents a mapping between a base in a string and a (text, index) position
@@ -145,11 +167,11 @@ struct Mapping
 };
 
 /**
- * A triple to hold the return values from FMD::mapPosition(). Holds a flag for
- * whether the mapping succeeded or not, an FMDPosition corresponding either to
- * where the character mapped or the longest search starting at the character
- * that did actually return results, and the number of characters in the
- * FMDPosition's search pattern.
+ * A triple to hold the return values from FMD::mapPosition() or
+ * FMD::partialMap(). Holds a flag for whether the mapping succeeded or not, an
+ * FMDPosition corresponding either to where the character mapped or the longest
+ * search starting at the character that did actually return results, and the
+ * number of characters in the FMDPosition's search pattern.
  */
 struct MapAttemptResult
 {
@@ -216,6 +238,25 @@ class FMD : public RLCSA
       usint index) const;
       
     /**
+     * Try left-mapping the given index in the given string to a unique forward-
+     * strand range according to the bit vector of range start points, starting
+     * from scratch. Start a backwards search at that index in the string and
+     * extend left until we map to exactly one or zero ranges. Returns true or
+     * false depending on whether we map, an FMDPosition (in BWT coordinates)
+     * that, if nonempty, can be extended right to try and map the next base to
+     * the right, and the number of characters in the pattern used to make that
+     * FMDPosition.
+     *
+     * If the mapping succeeded, the FMDPosition returned is completely
+     * contained within one range, which is the range to which the base has been
+     * mapped.
+     *
+     * Index must be a valid character position in the string.
+     */
+    MapAttemptResult mapPosition(const RangeVector& ranges, 
+      const std::string& pattern, usint index) const;
+      
+    /**
      * Attempt to map each base in the query string to a (text, position) pair.
      * The vector returned will have one entry for each character in the
      * selected range.
@@ -227,6 +268,20 @@ class FMD : public RLCSA
      */
     std::vector<Mapping> map(const std::string& query, usint start = 0,
       sint length = -1) const;
+      
+    /**
+     * Try left-mapping each base in the query to one of the ranges represented
+     * by the range vector. The range vector is in BWT space, and has a 1 in the
+     * first position in each range, and is 0 everywhere else. So rank(k) on it
+     * gives the number of the range containing position k, and we can easily
+     * check if both the start and end of our (backwards) search interval are in
+     * the same range.
+     *
+     * Returns a vector of range numbers for left-mapping each base, or -1 if
+     * the base did not map to a range.
+     */
+    std::vector<sint> map(const RangeVector& ranges,
+      const std::string& query, usint start = 0, sint length = -1) const;
       
   private:
     /**

@@ -19,6 +19,48 @@ FMDPosition::flip() const
   return FMDPosition(reverse_start, forward_start, length);
 }
 
+sint
+FMDPosition::range(const RangeVector& ranges) const
+{
+  // Get an iterator for making rank queries.
+  // TODO: Is it efficient to do this a lot?
+  RangeVector::Iterator iter(ranges);
+
+  // Look up the range that the starting position is in
+  sint start_range = iter.rank(forward_start);
+  
+  // And the range the end is in
+  sint end_range = iter.rank(forward_start + length);
+  
+  if(start_range == end_range)
+  {
+    // Both ends of the interval are in the same range.
+    return start_range;
+  }
+  else
+  {
+    // There is no range spanning our forward-strand interval.
+    return -1;
+  }
+}
+
+sint
+FMDPosition::ranges(const RangeVector& ranges) const
+{
+  // Get an iterator for making rank queries.
+  // TODO: Is it efficient to do this a lot?
+  RangeVector::Iterator iter(ranges);
+
+  // Look up the range that the starting position is in
+  sint start_range = iter.rank(forward_start);
+  
+  // And the range the end is in
+  sint end_range = iter.rank(forward_start + length);
+  
+  // Return the number of ranges we intersect (1s hit plus 1)
+  return(end_range - start_range + 1);
+}
+
 std::ostream& operator<< (std::ostream& o, FMDPosition const& position)
 {
   // Report both the ranges that we represent.
@@ -133,12 +175,12 @@ FMD::extend(FMDPosition range, usint c, bool backward) const
     // whatever part of the length of the range is unaccounted-for by the other
     // characters. We need to use the length accessor because ranges with one
     // thing have the .length set to 0.
-    usint endOfTextLength = length(range);
+    usint endOfTextLength = range.getLength();
     
     for(usint base = 0; base < NUM_BASES; base++)
     {
       // Go through the bases in arbitrary order and account for their lengths.
-      endOfTextLength -= length(answers[base]);
+      endOfTextLength -= answers[base].getLength();
     }
     
       
@@ -162,7 +204,7 @@ FMD::extend(FMDPosition range, usint c, bool backward) const
       // (as stored in BASES), allocate it the next part of the reverse range.
       
       answers[base].reverse_start = answers[base - 1].reverse_start + 
-        length(answers[base - 1]);
+        answers[base - 1].getLength();
       DEBUG(std::cout << "\t" << BASES[base] << " reverse_start is " << 
         answers[base].reverse_start << std::endl;)
       
@@ -264,7 +306,7 @@ FMD::fmdCount(const std::string& pattern, bool backward) const
     
     std::string::const_reverse_iterator iter = pattern.rbegin();
     index_position = this->getCharPosition((uchar)*iter);
-    if(isEmpty(index_position)) { return index_position; }
+    if(index_position.isEmpty()) { return index_position; }
 
     DEBUG(std::cout << "Starting with " << index_position << std::endl;)
 
@@ -276,7 +318,7 @@ FMD::fmdCount(const std::string& pattern, bool backward) const
         std::endl;)
       // Test out retracting
       //DEBUG(this->retract(index_position, *iter, true);)
-      if(isEmpty(index_position)) { return EMPTY_FMD_POSITION; }
+      if(index_position.isEmpty()) { return EMPTY_FMD_POSITION; }
     }
   }
   else 
@@ -285,7 +327,7 @@ FMD::fmdCount(const std::string& pattern, bool backward) const
     
     std::string::const_iterator iter = pattern.begin();
     index_position = this->getCharPosition((uchar)*iter);
-    if(isEmpty(index_position)) { return index_position; }
+    if(index_position.isEmpty()) { return index_position; }
 
     DEBUG(std::cout << "Starting with " << index_position << std::endl;)
 
@@ -297,7 +339,7 @@ FMD::fmdCount(const std::string& pattern, bool backward) const
         std::endl;)
       // Test out retracting
       //DEBUG(this->retract(index_position, *iter, false);)
-      if(isEmpty(index_position)) { return EMPTY_FMD_POSITION; }
+      if(index_position.isEmpty()) { return EMPTY_FMD_POSITION; }
     }
     
   }
@@ -320,11 +362,17 @@ FMD::mapPosition(const std::string& pattern, usint index) const
   result.is_mapped = false;
   result.position = this->getCharPosition(pattern[index]);
   result.characters = 1;
-  if(isEmpty(result.position))
+  if(result.position.isEmpty())
   {
     // This character isn't even in it. Just return the result with an empty
     // FMDPosition; the next character we want to map is going to have to deal
     // with having some never-before-seen character right upstream of it.
+    return result;
+  }
+  else if(result.position.getLength() == 1)
+  {
+    // We've already mapped.
+    result.is_mapped = true;
     return result;
   }
 
@@ -338,13 +386,13 @@ FMD::mapPosition(const std::string& pattern, usint index) const
       
     DEBUG(std::cout << "Now at " << next_position << " after " << 
       pattern[index] << std::endl;)
-    if(isEmpty(next_position))
+    if(next_position.isEmpty())
     {
       // The next place we would go is empty, so return the result holding the
       // last position.
       return result;
     }
-    else if(length(next_position) == 1)
+    else if(next_position.getLength() == 1)
     {
       // We have successfully mapped to exactly one place. Update our result to
       // reflect the additional extension and our success, and return it.
@@ -362,6 +410,73 @@ FMD::mapPosition(const std::string& pattern, usint index) const
   
   // If we get here, we ran out of upstream context and still map to multiple
   // places. Just give our multi-mapping FMDPosition and unmapped result.
+  return result;
+
+}
+
+MapAttemptResult
+FMD::mapPosition(const RangeVector& ranges, const std::string& pattern, 
+  usint index) const
+{
+  // Initialize the struct we will use to return our somewhat complex result.
+  // Contains the FMDPosition (which we work in), an is_mapped flag, and a
+  // variable counting the number of extensions made to the FMDPosition.
+  MapAttemptResult result;
+  
+  // Do a backward search.
+  // Start at the given index, and get the starting range for that character.
+  result.is_mapped = false;
+  result.position = this->getCharPosition(pattern[index]);
+  result.characters = 1;
+  if(result.position.isEmpty())
+  {
+    // This character isn't even in it. Just return the result with an empty
+    // FMDPosition; the next character we want to map is going to have to deal
+    // with having some never-before-seen character right upstream of it.
+    return result;
+  }
+  else if (result.position.range(ranges) != -1)
+  {
+    // We've already mapped.
+    result.is_mapped = true;
+    return result;
+  }
+
+  DEBUG(std::cout << "Starting with " << result.position << std::endl;)
+
+  for(index--; index >= 0; index--)
+  {
+    // Backwards extend with subsequent characters.
+    FMDPosition next_position = this->extend(result.position, pattern[index],
+      true);
+      
+    DEBUG(std::cout << "Now at " << next_position << " after " << 
+      pattern[index] << std::endl;)
+    if(next_position.isEmpty())
+    {
+      // The next place we would go is empty, so return the result holding the
+      // last position.
+      return result;
+    }
+    
+    if(next_position.range(ranges) != -1)
+    {
+      // We have successfully mapped to exactly one range. Update our result to
+      // reflect the additional extension and our success, and return it.
+      result.position = next_position;
+      result.characters++;
+      result.is_mapped = true;
+      return result;      
+    }
+    
+    // Otherwise, we still map to a plurality of ranges. Record the extension
+    // and loop again.
+    result.position = next_position;
+    result.characters++;
+  }
+  
+  // If we get here, we ran out of upstream context and still map to multiple
+  // ranges. Just give our multi-mapping FMDPosition and unmapped result.
   return result;
 
 }
@@ -387,7 +502,7 @@ FMD::map(const std::string& query, usint start, sint length) const
   
   for(sint i = start; i < length; i++)
   {
-    if(isEmpty(location.position))
+    if(location.position.isEmpty())
     {
       INFO(std::cout << "Starting over by mapping position " << i <<
         std::endl;)
@@ -405,12 +520,8 @@ FMD::map(const std::string& query, usint start, sint length) const
       location.characters++;
     }
     
-    if(location.is_mapped && CSA::length(location.position) == 1)
+    if(location.is_mapped && location.position.getLength() == 1)
     {
-      // We need to explicitly namespace our call to the useful length function
-      // sicne we also have a length local. TODO: put length function inside the
-      // FMDPosition struct as a method.
-      
       // It mapped. We didn't do a re-start and fail, and there's exactly one
       // thing in our interval.
         
@@ -446,7 +557,7 @@ FMD::map(const std::string& query, usint start, sint length) const
       INFO(std::cout << "Failed (" << CSA::length(location.position) << 
         " options for " << location.characters << " context)." << std::endl;)
         
-      if(location.is_mapped && isEmpty(location.position))
+      if(location.is_mapped && location.position.isEmpty())
       {
         // We extended right until we got no results. We need to try this base
         // again, in case we tried with a too-long left context.
@@ -487,6 +598,112 @@ FMD::map(const std::string& query, usint start, sint length) const
   // We've gone through and attempted the whole string. Give back our answers.
   return mappings;
   
+}
+
+std::vector<sint> 
+FMD::map(const RangeVector& ranges, const std::string& query, usint start, 
+  sint length) const {
+    
+  // Fix up the length parameter if it is -1: that means the whole rest of the
+  // string.
+  length = query.length() - start;
+  
+  // We need a vector to return.
+  std::vector<sint> mappings;
+  
+  // Keep around the result that we get from the single-character mapping
+  // function. We use it as our working state to trackour FMDPosition and how
+  // many characters we've extended by. We use the is_mapped flag to indicate
+  // whether the current iteration is an extension or a restart.
+  MapAttemptResult location;
+  // Make sure the scratch position is empty so we re-start on the first base
+  location.position = EMPTY_FMD_POSITION;
+  
+  for(sint i = start; i < length; i++)
+  {
+    if(location.position.isEmpty())
+    {
+      INFO(std::cout << "Starting over by mapping position " << i <<
+        std::endl;)
+      // We do not currently have a non-empty FMDPosition to extend. Start over
+      // by mapping this character by itself.
+      location = this->mapPosition(ranges, query, i);
+    }
+    else
+    {
+      INFO(std::cout << "Extending with position " << i << std::endl;)
+      // The last base either mapped successfully or failed due to multi-
+      // mapping. Try to extend the FMDPosition we have to the right (not
+      // backwards) with the next base.
+      location.position = this->extend(location.position, query[i], false);
+      location.characters++;
+    }
+    
+    // What range index does our current position map to, if any?
+    sint range = location.position.range(ranges);
+    
+    if(location.is_mapped && range != -1)
+    {
+      // It mapped. We didn't do a re-start and fail, and our interval is
+      // subsumed by a range.
+      
+      INFO(std::cout << "Mapped " << location.characters << 
+        " context to range " << range << std::endl;)
+      
+      // Remember that this base mapped to this range
+      mappings.push_back(range);
+      
+      // We definitely have a non-empty FMDPosition to continue from
+      
+    }
+    else
+    {
+    
+      INFO(std::cout << "Failed (" << location.position.ranges(ranges) << 
+        " options for " << location.characters << " context)." << std::endl;)
+        
+      if(location.is_mapped && location.position.isEmpty())
+      {
+        // We extended right until we got no results. We need to try this base
+        // again, in case we tried with a too-long left context.
+        
+        INFO(std::cout << "Restarting from here..." << std::endl;)
+        
+        // Move the loop index back
+        i--;
+        
+        // Since the FMDPosition is empty, on the next iteration we will retry
+        // this base.
+        
+      }
+      else
+      {
+        // It didn't map for some other reason:
+        // - It was an initial mapping with too little left context to be unique
+        //   to a range.
+        // - It was an initial mapping with a nonexistent left context
+        // - It was an extension that was multimapped and still is
+        
+        // In none of these cases will re-starting from this base help at all.
+        // If we just restarted here, we don't want to do it again. If it was
+        // multimapped before, it had as much left context as it could take
+        // without running out of string or getting no results.
+      
+        // It didn't map. Say it corresponds to no range.
+        mappings.push_back(-1);
+        
+        // Mark that the next iteration will be an extension (if we had any
+        // results this iteration; if not it will just restart)
+        location.is_mapped = true;
+        
+      }
+    }
+  
+  }
+  
+  // We've gone through and attempted the whole string. Give back our answers.
+  return mappings;
+    
 }
 
 FMDPosition
