@@ -34,9 +34,13 @@ namespace CSA
 {
 
 #ifdef USE_NIBBLE_VECTORS
-typedef NibbleVector  RangeVector;
+  // Use Nibble Vectors to encode our range endpoint bitmaps
+  typedef NibbleVector RangeVector;
+  typedef NibbleEncoder RangeEncoder;
 #else
-typedef RLEVector     RangeVector;
+  // Use RLEVectors to encode our range endpoint bitmaps
+  typedef RLEVector RangeVector;
+  typedef RLEEncoder RangeEncoder;
 #endif
 
 static const usint NUM_BASES = 5;
@@ -101,10 +105,10 @@ struct FMDPosition
 {
   usint forward_start;
   usint reverse_start;
-  // Length 0 = only the entry at start/end
-  sint length;
+  // Offset 0 = only the entry at start/end. -1 = empty.
+  sint end_offset;
   FMDPosition();
-  FMDPosition(usint forward_start, usint reverse_start, usint length);
+  FMDPosition(usint forward_start, usint reverse_start, usint end_offset);
   /** 
    * Flip the FMDPosition around so the reverse complement interval is the
    * forward interval and visa versa.
@@ -116,7 +120,7 @@ struct FMDPosition
    */
   inline bool isEmpty() const
   {
-    return length < 0;
+    return end_offset < 0;
   }
 
   /**
@@ -124,7 +128,7 @@ struct FMDPosition
    */
   inline usint getLength() const
   {
-    return length + 1;
+    return end_offset + 1;
   }
   
   /**

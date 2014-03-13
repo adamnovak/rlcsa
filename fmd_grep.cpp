@@ -128,18 +128,18 @@ int main(int argc, char** argv)
     // And also forwards search
     FMDPosition fmd_result_forward = fmd.fmdCount(pattern, false);
     
-    std::cout << "Got " << length(fmd_result) << " FMD matches, " << 
-      length(fmd_result_forward) << " FMD forward matches, " << occurrences << 
-      " RLCSA matches" << std::endl;
+    std::cout << "Got " << fmd_result.getLength() << " FMD matches, " << 
+      fmd_result_forward.getLength() << " FMD forward matches, " << 
+      occurrences << " RLCSA matches" << std::endl;
       
     std::cout << "FMD results:" << std::endl;
     print_results(pair_type(fmd_result.forward_start, fmd_result.forward_start +
-      fmd_result.length), fmd, mode, len, context);
+      fmd_result.end_offset), fmd, mode, len, context);
     
     std::cout << "FMD forward results:" << std::endl;
     print_results(pair_type(fmd_result_forward.forward_start, 
-      fmd_result_forward.forward_start + fmd_result_forward.length), fmd, mode, 
-      len, context);
+      fmd_result_forward.forward_start + fmd_result_forward.end_offset), fmd, 
+      mode, len, context);
     
     std::cout << "RLCSA results:" << std::endl;
     print_results(result_range, fmd, mode, len, context);

@@ -20,7 +20,7 @@ namespace CSA
 class VectorEncoder
 {
   public:
-    const static usint SUPERBLOCK_SIZE = MEGABYTE;
+    static const usint SUPERBLOCK_SIZE = MEGABYTE;
 
     // We assume superblock size is divisible by block and sample size.
     VectorEncoder(usint block_bytes, usint superblock_size = SUPERBLOCK_SIZE, bool _use_small_blocks = true);
@@ -75,7 +75,7 @@ class VectorEncoder
 class BitVector
 {
   public:
-    const static usint INDEX_RATE = 5;
+    static const usint INDEX_RATE = 5;
 
     explicit BitVector(std::ifstream& file);
     explicit BitVector(FILE* file);

@@ -3,12 +3,13 @@
 namespace CSA
 {
 
-FMDPosition::FMDPosition(usint forward_start, usint reverse_start, usint length):
-  forward_start(forward_start), reverse_start(reverse_start), length(length)
+FMDPosition::FMDPosition(usint forward_start, usint reverse_start,
+  usint end_offset): forward_start(forward_start), reverse_start(reverse_start),
+  end_offset(end_offset)
 {
 }
 
-FMDPosition::FMDPosition(): forward_start(0), reverse_start(0), length(-1)
+FMDPosition::FMDPosition(): forward_start(0), reverse_start(0), end_offset(-1)
 {
 }
 
@@ -16,7 +17,7 @@ FMDPosition
 FMDPosition::flip() const
 {
   // Swap the two intervals of the bi-interval
-  return FMDPosition(reverse_start, forward_start, length);
+  return FMDPosition(reverse_start, forward_start, end_offset);
 }
 
 sint
@@ -30,7 +31,7 @@ FMDPosition::range(const RangeVector& ranges) const
   sint start_range = iter.rank(forward_start);
   
   // And the range the end is in
-  sint end_range = iter.rank(forward_start + length);
+  sint end_range = iter.rank(forward_start + end_offset);
   
   if(start_range == end_range)
   {
@@ -55,7 +56,7 @@ FMDPosition::ranges(const RangeVector& ranges) const
   sint start_range = iter.rank(forward_start);
   
   // And the range the end is in
-  sint end_range = iter.rank(forward_start + length);
+  sint end_range = iter.rank(forward_start + end_offset);
   
   // Return the number of ranges we intersect (1s hit plus 1)
   return(end_range - start_range + 1);
@@ -65,8 +66,9 @@ std::ostream& operator<< (std::ostream& o, FMDPosition const& position)
 {
   // Report both the ranges that we represent.
   return o << position.forward_start << "-" << 
-    (position.forward_start + position.length) << "|" << 
-    position.reverse_start << "-" << (position.reverse_start + position.length);
+    (position.forward_start + position.end_offset) << "|" << 
+    position.reverse_start << "-" << (position.reverse_start + 
+    position.end_offset);
 }
 
 Mapping::Mapping(): location(0, 0), is_mapped(false)
@@ -134,8 +136,8 @@ FMD::extend(FMDPosition range, usint c, bool backward) const
         
         // Fill in forward_start and length with the knowledge that this
         // character doesn't exist. forward_start should never get used, but
-        // length will get used and probably needs to be -1 for empty.
-        answers[base].length = -1;
+        // end_offset will get used and probably needs to be -1 for empty.
+        answers[base].end_offset = -1;
         
       }
       else
@@ -148,23 +150,24 @@ FMD::extend(FMDPosition range, usint c, bool backward) const
         
         DEBUG(std::cout << "\t\tGot iterator" << std::endl;)
       
-        // Fill in the forward-strand start positions and range lengths for each
-        // base's answer. TODO: do we want at_least set or not? What does it do?
+        // Fill in the forward-strand start positions and range end_offsets for
+        // each base's answer. TODO: do we want at_least set or not? What does
+        // it do?
         
         // First cache the forward_start rank we re-use
         usint forward_start_rank = iter.rank(range.forward_start, true);
         
         answers[base].forward_start = start + forward_start_rank;
-        answers[base].length = iter.rank(range.forward_start + range.length, 
-          false) - forward_start_rank;
+        answers[base].end_offset = iter.rank(range.forward_start + 
+          range.end_offset, false) - forward_start_rank;
           
       }
         
       
         
       DEBUG(std::cout << "\t\tWould go to: " << answers[base].forward_start <<
-        "-" << (sint)answers[base].forward_start + answers[base].length << 
-        " length " << length(answers[base]) << std::endl;)
+        "-" << (sint)answers[base].forward_start + answers[base].end_offset << 
+        " length " << answers[base].getLength() << std::endl;)
     }
     
     // Since we don't keep an FMDPosition for the non-base end-of-text
@@ -174,7 +177,7 @@ FMD::extend(FMDPosition range, usint c, bool backward) const
     // is devoted to things where an endOfText comes next) implicitly: it's
     // whatever part of the length of the range is unaccounted-for by the other
     // characters. We need to use the length accessor because ranges with one
-    // thing have the .length set to 0.
+    // thing have the .end_offset set to 0.
     usint endOfTextLength = range.getLength();
     
     for(usint base = 0; base < NUM_BASES; base++)
