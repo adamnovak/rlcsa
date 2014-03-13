@@ -33,13 +33,45 @@
   typedef NibbleVector RangeVector;
   %rename(RangeEncoder) NibbleEncoder;
   typedef NibbleEncoder RangeEncoder;
+  %{
+    typedef NibbleVector::Iterator RangeVectorIterator;
+  %}
 #else
   // Use RLEVectors to encode our range endpoint bitmaps
   %rename(RangeVector) RLEVector;
   typedef RLEVector RangeVector;
   %rename(RangeEncoder) RLEEncoder;
   typedef RLEEncoder RangeEncoder;
+  %{
+    typedef RLEVector::Iterator RangeVectorIterator;
+  %}
 #endif
+
+// We need to use the inner vector iterator classes to look at vectors. Give a
+// partial definition under a new name that works with the conditional typedefs
+// above.
+class RangeVectorIterator
+{
+public:
+  explicit RangeVectorIterator(const RangeVector& par);
+  ~RangeVectorIterator();
+
+  usint rank(usint value, bool at_least = false);
+
+  usint select(usint index);
+  usint selectNext();
+
+  pair_type valueBefore(usint value);
+  pair_type valueAfter(usint value);
+  pair_type nextValue();
+
+  pair_type selectRun(usint index, usint max_length);
+  pair_type selectNextRun(usint max_length);
+
+  bool isSet(usint value);
+
+  usint countRuns();
+};
 
 // Java needs to work with vectors of mappings coming back from the map method.
 %template(MappingVector) std::vector<CSA::Mapping>; 
@@ -62,8 +94,7 @@ typedef std::pair<usint, usint> pair_type;
   }
 %}
 
-// Skip inner classes we can't wrap anyway (so no way to read the bit vectors.
-// Sorry.) We'd %ignore them, but Swig ignores that.
+// We already worked around the inner classes thing.
 #pragma SWIG nowarn=SWIGWARN_PARSE_NESTED_CLASS
 
 %include "bits/bitvector.h"
