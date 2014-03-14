@@ -15,7 +15,10 @@
 #ifdef MASSIVE_DATA_RLCSA
 
   typedef unsigned long usint;
-  typedef signed long   sint;
+  // HACK: This is really a "signed long", but SWIG turns that into a Java int,
+  // which is clearly smaller. So we lie to it to get it to use a Java long.
+  // TODO: Use typemaps or something to fix this instead.
+  typedef unsigned long sint;
 
 #else
 

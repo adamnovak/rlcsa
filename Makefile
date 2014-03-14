@@ -136,7 +136,7 @@ genpatterns: genpatterns.c
 	
 %_wrap.cxx: %.i
 	mkdir -p java
-	swig -c++ -java -outdir java -package $(JAVA_PACKAGE) $(SIZE_FLAGS) $^
+	swig -c++ -java -outdir java -package $(JAVA_PACKAGE) $(SIZE_FLAGS) $(VECTOR_FLAGS) $^
 
 clean:
 	rm -f rlcsa.a
