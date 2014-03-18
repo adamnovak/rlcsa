@@ -375,7 +375,8 @@ RLCSA::locate(usint index, bool steps) const
 usint
 RLCSA::inverseLocate(usint location) const
 {
-  if(!(this->support_locate) || location >= this->data_size) { return this->data_size; }
+  if(!(this->support_locate)) { return this->data_size; }
+  // TODO: Check for out-of-bounds locations somehow.
 
   // Inverse-locate the given location in BWT space, and convert back to SA
   // space before returning.
@@ -434,23 +435,43 @@ RLCSA::directLocate(usint index, bool steps) const
 usint
 RLCSA::directInverseLocate(usint location) const
 {
-  // Get the SA value and text location (in that order) of the last SA sample
+  
+  std::cout << "Dumping SA" << std::endl;
+  
+  for(usint i = 0; i <= this->data_size; i++) 
+  {
+    if(this->sa_samples->isSampled(i))
+    {
+      std::cout << "SA[" << i << "] = " << this->sa_samples->getSampleAt(i) << std::endl;
+    }
+  }
+  
+  std::cout << "Un-locating " << location << std::endl;
+  // Get the SA value and SA index (in that order) of the last SA sample
   // before the given text location.
   pair_type last_sample = this->sa_samples->inverseSA(location);
   
   // TODO: catch the (size, size) sentinel.
-  
-  while(last_sample.second != location) {
+  std::cout << "SA[" << last_sample.second << "] = " << last_sample.first << std::endl;
+  while(last_sample.first < location) {
     // We're not at the desired text location, so we must be before it.
     
-    // Advance the text location by 1
-    last_sample.second += 1;
+    // Advance the text location (SA value) by 1
+    last_sample.first += 1;
     
-    // Advance the SA position to that corresponding to the next character. Note
+    // Advance the SA index to that corresponding to the next character. Note
     // that psi returns BWT coordinates, so we have to convert back to SA
     // coordinates.
-    last_sample.first = (this->psi(last_sample.first) - 
+    last_sample.second = (this->psi(last_sample.second) - 
       this->number_of_sequences);
+      
+    std::cout << "SA[" << last_sample.second << "] = " << last_sample.first << std::endl;
+  }
+  
+  if(last_sample.first != location) {
+    // We managed to start on the wrong side of what we're trying to locate;
+    // inverseSA lied to us.
+    throw "Somehow skipped desired inverse locate position";
   }
   
   // Return the answer in BWT coordinates. It will probably be immediately

@@ -56,6 +56,7 @@ class SASamples
     void writeTo(FILE* sample_file) const;
 
     // Returns (i, inverseSA(i)) such that i is the last sampled position up to value.
+    // The return value can also be thought of as (SA[j], j).
     // Value is actual 0-based suffix array value.
     // Returns (size, size) if value is too large.
     pair_type inverseSA(usint value) const;
