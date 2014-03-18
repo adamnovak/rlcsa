@@ -8,8 +8,8 @@
 //#define DEBUG(op) op
 #define DEBUG(op)
 
-//#define INFO(op) op
-#define INFO(op)
+#define INFO(op) op
+//#define INFO(op)
 
 #include <fstream>
 #include <iostream>
@@ -242,7 +242,7 @@ class FMD : public RLCSA
       usint index) const;
       
     /**
-     * Try left-mapping the given index in the given string to a unique forward-
+     * Try RIGHT-mapping the given index in the given string to a unique forward-
      * strand range according to the bit vector of range start points, starting
      * from scratch. Start a backwards search at that index in the string and
      * extend left until we map to exactly one or zero ranges. Returns true or
@@ -250,6 +250,9 @@ class FMD : public RLCSA
      * that, if nonempty, can be extended right to try and map the next base to
      * the right, and the number of characters in the pattern used to make that
      * FMDPosition.
+     *
+     * The range starting points must be such that the ranges described are "bi-
+     * ranges": each range has its reverse-complement range also present.
      *
      * If the mapping succeeded, the FMDPosition returned is completely
      * contained within one range, which is the range to which the base has been
@@ -274,12 +277,17 @@ class FMD : public RLCSA
       sint length = -1) const;
       
     /**
-     * Try left-mapping each base in the query to one of the ranges represented
+     * Try RIGHT-mapping each base in the query to one of the ranges represented
      * by the range vector. The range vector is in BWT space, and has a 1 in the
      * first position in each range, and is 0 everywhere else. So rank(k) on it
      * gives the number of the range containing position k, and we can easily
      * check if both the start and end of our (backwards) search interval are in
      * the same range.
+     *
+     * TODO: Unify semantics!
+     *
+     * The range starting points must be such that the ranges described are "bi-
+     * ranges": each range has its reverse-complement range also present.
      *
      * Returns a vector of range numbers for left-mapping each base, or -1 if
      * the base did not map to a range.
