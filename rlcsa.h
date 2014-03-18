@@ -111,6 +111,9 @@ class RLCSA
 
     // Returns SA[index].
     usint locate(usint index, bool steps = false) const;
+    
+    // Given SA[index], returns index.
+    usint inverseLocate(usint location) const;
 
     // Returns T^{sequence}[range]. User must free the buffer.
     // Third version uses buffer provided by the user.
@@ -144,6 +147,9 @@ class RLCSA
 
     // Changes SA value to (sequence, offset).
     pair_type getRelativePosition(usint value) const;
+    // Changes (sequence, offset) to SA value (not the same as SA index; it's a
+    // position in the unified coordinate space over all texts).
+    usint getAbsolutePosition(pair_type position) const;
 
     // Returns the BWT of the collection including end of sequence markers.
     uchar* readBWT() const;
@@ -304,13 +310,22 @@ class RLCSA
 //  INTERNAL VERSIONS OF QUERIES
 //--------------------------------------------------------------------------
 
+    // Locates the given SA range, one item at a time, storing results in the
+    // array given by the data pointer. Finds actual locations if steps is
+    // false, or the number of steps needed to determine each location if steps
+    // is true.
     void  directLocate(pair_type range, usint* data, bool steps) const;
+    // Locates the given BWT position, returning either the actual location or
+    // the steps needed to find it, depending on the value of steps.
     usint directLocate(usint index, bool steps) const;
     void  locateUnsafe(pair_type range, usint* data, bool steps) const;
     bool  processRun(pair_type run, usint* data, usint* offsets, bool* finished, PsiVector::Iterator** iters, bool steps) const;
     void  displayUnsafe(pair_type range, uchar* data, bool get_ranks = false, usint* ranks = 0) const;
 
     void locateRange(pair_type range, std::vector<usint>& vec) const;
+    
+    // Given a sequence position, return the corresponding BWT position.
+    usint directInverseLocate(usint location) const;
 
 //--------------------------------------------------------------------------
 //  INTERNAL VERSIONS OF BASIC OPERATIONS

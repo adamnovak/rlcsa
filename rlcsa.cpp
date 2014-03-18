@@ -372,9 +372,20 @@ RLCSA::locate(usint index, bool steps) const
   return this->directLocate(index + this->number_of_sequences, steps);
 }
 
+usint
+RLCSA::inverseLocate(usint location) const
+{
+  if(!(this->support_locate) || location >= this->data_size) { return this->data_size; }
+
+  // Inverse-locate the given location in BWT space, and convert back to SA
+  // space before returning.
+  return this->directInverseLocate(location) - this->number_of_sequences;
+}
+
 void
 RLCSA::directLocate(pair_type range, usint* data, bool steps) const
 {
+  // range is in SA coordinates, so first we need to convert to BWT coordinates.
   this->convertToBWTRange(range);
   for(usint i = 0, j = range.first; j <= range.second; i++, j++)
   {
@@ -385,22 +396,67 @@ RLCSA::directLocate(pair_type range, usint* data, bool steps) const
 usint
 RLCSA::directLocate(usint index, bool steps) const
 {
+  // Note that index is in BWT coordinates initially.
+  
+  // This keeps track of how far along the sequence we had to go to find an SA
+  // sample.
   usint offset = 0;
   while(true)
   {
+    // First try in BWT space, so we can account for the text end characters.
     if(this->hasImplicitSample(index))
     {
+      // If we took an implicit sample at this index in the BWT (due to us being
+      // in the range occupied by sequence start characters), we know where it
+      // falls in the original sequences: at the endpoint of the appropriate
+      // text.
       if(steps) { return offset; }
       else      { return this->getImplicitSample(index) - offset; }
     }
+    // Pop index into SA space, where the SA samples live
     index -= this->number_of_sequences;
     if(this->sa_samples->isSampled(index))
     {
+      // If we took a real SA sample here, we know where it falls in the
+      // original sequences.
       return (steps ? offset : this->sa_samples->getSampleAt(index) - offset);
     }
+    
+    // If we get here, we couldn't map this position. Proceed forwards (towards
+    // the end of the sequence), in hopes of hitting either a sample or the
+    // sequence end character. Note that psi maps from SA position to the *BWT*
+    // position of the subsequent character, popping index back into BWT space.
     index = this->psi(index);
     offset++;
   }
+}
+
+usint
+RLCSA::directInverseLocate(usint location) const
+{
+  // Get the SA value and text location (in that order) of the last SA sample
+  // before the given text location.
+  pair_type last_sample = this->sa_samples->inverseSA(location);
+  
+  // TODO: catch the (size, size) sentinel.
+  
+  while(last_sample.second != location) {
+    // We're not at the desired text location, so we must be before it.
+    
+    // Advance the text location by 1
+    last_sample.second += 1;
+    
+    // Advance the SA position to that corresponding to the next character. Note
+    // that psi returns BWT coordinates, so we have to convert back to SA
+    // coordinates.
+    last_sample.first = (this->psi(last_sample.first) - 
+      this->number_of_sequences);
+  }
+  
+  // Return the answer in BWT coordinates. It will probably be immediately
+  // converted back to SA coordinates, but it's worth it for consistency with
+  // the directLocate function, which takes in BWT coordinates.
+  return last_sample.first + this->number_of_sequences;
 }
 
 void
@@ -794,16 +850,50 @@ RLCSA::getSequenceForPosition(usint* values, usint len) const
 pair_type
 RLCSA::getRelativePosition(usint value) const
 {
+  // Get an iterator so we can use the vector of sequence endpoints.
   DeltaVector::Iterator iter(*(this->end_points));
+  
+  // Start out saying we're in text 0 at index whatever our index in the whole
+  // string of texts is.
   pair_type result(0, value);
 
+  // Adjust the text number to whatever text hadn't yet ended at the position
+  // before the one we're interested in.
   if(value > 0) { result.first = iter.rank(value - 1); }
   if(result.first > 0)
   {
+    // If we're not still in the 0th text, re-base our index in the text to
+    // count from the first multiple of the SA sample rate after the end of the
+    // text before this text (since we have declared text coordinates start on
+    // SA sample multiples).
     result.second -= nextMultipleOf(this->sample_rate, iter.select(result.first - 1));
   }
 
+  // Return the fixed-up relative position.
   return result;
+}
+
+usint
+RLCSA::getAbsolutePosition(pair_type position) const
+{
+  // Get an iterator so we can use the vector of sequence endpoints.
+  DeltaVector::Iterator iter(*(this->end_points));
+  
+  // Where is this position as an absolute position? Start off at the beginning.
+  usint value = 0;
+  
+  if(position.first > 0) {
+    // Only the 0th text starts at 0. Find the absolute endpoint of the previous
+    // text, and then start at the next multiple of the sample rate after that.
+    // That is where this text is going to start.
+    value = nextMultipleOf(this->sample_rate, iter.select(position.first - 1));
+  }
+  
+  // Advance the start of the text by the index into the text.
+  value += position.second;
+  
+  // Return the resulting absolute position.
+  return value;
 }
 
 //--------------------------------------------------------------------------
