@@ -435,24 +435,11 @@ RLCSA::directLocate(usint index, bool steps) const
 usint
 RLCSA::directInverseLocate(usint location) const
 {
-  
-  std::cout << "Dumping SA" << std::endl;
-  
-  for(usint i = 0; i <= this->data_size; i++) 
-  {
-    if(this->sa_samples->isSampled(i))
-    {
-      std::cout << "SA[" << i << "] = " << this->sa_samples->getSampleAt(i) << std::endl;
-    }
-  }
-  
-  std::cout << "Un-locating " << location << std::endl;
   // Get the SA value and SA index (in that order) of the last SA sample
   // before the given text location.
   pair_type last_sample = this->sa_samples->inverseSA(location);
   
   // TODO: catch the (size, size) sentinel.
-  std::cout << "SA[" << last_sample.second << "] = " << last_sample.first << std::endl;
   while(last_sample.first < location) {
     // We're not at the desired text location, so we must be before it.
     
@@ -465,7 +452,6 @@ RLCSA::directInverseLocate(usint location) const
     last_sample.second = (this->psi(last_sample.second) - 
       this->number_of_sequences);
       
-    std::cout << "SA[" << last_sample.second << "] = " << last_sample.first << std::endl;
   }
   
   if(last_sample.first != location) {
