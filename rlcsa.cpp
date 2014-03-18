@@ -474,10 +474,10 @@ RLCSA::directInverseLocate(usint location) const
     throw "Somehow skipped desired inverse locate position";
   }
   
-  // Return the answer in BWT coordinates. It will probably be immediately
-  // converted back to SA coordinates, but it's worth it for consistency with
-  // the directLocate function, which takes in BWT coordinates.
-  return last_sample.first + this->number_of_sequences;
+  // Return the answer (SA index) in BWT coordinates. It will probably be
+  // immediately converted back to SA coordinates, but it's worth it for
+  // consistency with the directLocate function, which takes in BWT coordinates.
+  return last_sample.second + this->number_of_sequences;
 }
 
 void
