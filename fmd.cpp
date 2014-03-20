@@ -515,7 +515,6 @@ FMD::map(const std::string& query, usint start, sint length) const
         std::endl;)
       // We do not currently have a non-empty FMDPosition to extend. Start over
       // by mapping this character by itself.
-      // TODO: This is O(characters before we get a match^2)
       location = this->mapPosition(query, i);
     }
     else
