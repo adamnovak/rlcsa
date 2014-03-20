@@ -500,7 +500,7 @@ FMD::map(const std::string& query, usint start, sint length) const
   std::vector<Mapping> mappings;
   
   // Keep around the result that we get from the single-character mapping
-  // function. We use it as our working state to trackour FMDPosition and how
+  // function. We use it as our working state to track our FMDPosition and how
   // many characters we've extended by. We use the is_mapped flag to indicate
   // whether the current iteration is an extension or a restart.
   MapAttemptResult location;
@@ -515,6 +515,7 @@ FMD::map(const std::string& query, usint start, sint length) const
         std::endl;)
       // We do not currently have a non-empty FMDPosition to extend. Start over
       // by mapping this character by itself.
+      // TODO: This is O(characters before we get a match^2)
       location = this->mapPosition(query, i);
     }
     else
