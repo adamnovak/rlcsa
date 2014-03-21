@@ -29,6 +29,9 @@ typedef signed int    sint;
 
 #endif
 
+// Decide uchars are chars
+typedef char uchar;
+
 // Java needs to work with pair_types that are count results.
 typedef std::pair<usint, usint> pair_type;
 %template(pair_type) std::pair<usint, usint>;
@@ -45,6 +48,11 @@ typedef std::pair<usint, usint> pair_type;
     RLCSANativeLoader.load();
   }
 %}
+
+// Mark some of the display methods as making new objects we need to manage the
+// memory of. TODO: get them all.
+%newobject RLCSA::display(usint sequence, bool include_end_marker = false);
+%newobject RLCSA::display(usint sequence, pair_type range) const;
 
 %include "rlcsa.h"
 

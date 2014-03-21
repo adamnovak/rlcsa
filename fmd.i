@@ -27,6 +27,9 @@
 
 #endif
 
+// Decide uchars are chars
+typedef char uchar;
+
 // Make sure to rename these things that we swap out with #defines to a
 // consistent name. Also note that these "vectors" are bit vectors, not
 // std::vectors.
