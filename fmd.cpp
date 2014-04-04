@@ -102,9 +102,16 @@ FMD::extend(FMDPosition range, usint c, bool backward) const
   {
 
     // Only allow characters in the index
-    if(c >= CHARS || this->array[c] == 0) { return EMPTY_FMD_POSITION; }
+    if(c >= CHARS || this->array[c] == 0) {
+        DEBUG(std::cout << "Character " << c << " not in index." << std::endl;)
+        return EMPTY_FMD_POSITION;
+    }
     // Only allow DNA bases
-    if(!isBase(c)) { return EMPTY_FMD_POSITION; }
+    if(!isBase(c)) {
+        DEBUG(std::cout << "Character " << c << " is not a DNA base." << 
+            std::endl;)
+        return EMPTY_FMD_POSITION;
+    }
     
     DEBUG(std::cout << "Extending " << range << " backwards with " << (char)c <<
       std::endl;)
@@ -356,6 +363,8 @@ FMD::fmdCount(const std::string& pattern, bool backward) const
 MapAttemptResult
 FMD::mapPosition(const std::string& pattern, usint index) const
 {
+  DEBUG(std::cout << "Mapping " << index << " in " << pattern << std::endl;)
+  
   // Initialize the struct we will use to return our somewhat complex result.
   // Contains the FMDPosition (which we work in), an is_mapped flag, and a
   // variable counting the number of extensions made to the FMDPosition.
@@ -380,12 +389,27 @@ FMD::mapPosition(const std::string& pattern, usint index) const
     return result;
   }
 
+  if(index == 0) {
+    // The rest of the function deals with characters to the left of the one we
+    // start at. If we start at position 0 there can be none.
+    return result;
+  }
+  
   DEBUG(std::cout << "Starting with " << result.position << std::endl;)
 
-  for(index--; index >= 0; index--)
+  do
   {
+    // Now consider the next character to the left.
+    index--;
+    
+    // Grab the character to extend with.
+    usint character = pattern[index];
+    
+    DEBUG(std::cout << "Index " << index << " in " << pattern << " is " << 
+        (char) character << "(" << character << ")" << std::endl;)
+    
     // Backwards extend with subsequent characters.
-    FMDPosition next_position = this->extend(result.position, pattern[index],
+    FMDPosition next_position = this->extend(result.position, character,
       true);
       
     DEBUG(std::cout << "Now at " << next_position << " after " << 
@@ -410,7 +434,11 @@ FMD::mapPosition(const std::string& pattern, usint index) const
     // and loop again.
     result.position = next_position;
     result.characters++;
+    
   }
+  while(index > 0);
+  // Continue considering characters to the left until we hit the start of the
+  // string.
   
   // If we get here, we ran out of upstream context and still map to multiple
   // places. Just give our multi-mapping FMDPosition and unmapped result.
