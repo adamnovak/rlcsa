@@ -504,7 +504,8 @@ FMD::map(const std::string& query, usint start, sint length) const
   // many characters we've extended by. We use the is_mapped flag to indicate
   // whether the current iteration is an extension or a restart.
   MapAttemptResult location;
-  // Make sure the scratch position is empty so we re-start on the first base
+  // Make sure the scratch position is empty so we re-start on the first base.
+  // Other fields get overwritten.
   location.position = EMPTY_FMD_POSITION;
   
   for(sint i = start; i < start + length; i++)
