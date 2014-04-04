@@ -29,9 +29,6 @@ typedef signed int    sint;
 
 #endif
 
-// Decide uchars are chars
-typedef char uchar;
-
 // Java needs to work with pair_types that are count results.
 typedef std::pair<usint, usint> pair_type;
 %template(pair_type) std::pair<usint, usint>;
@@ -41,6 +38,10 @@ typedef std::pair<usint, usint> pair_type;
 
 // And with pointers to usint
 %pointer_functions(usint,USIntPointer);
+
+// And with arrays of characters (instead of null-terminated strings) for the
+// display output.
+%array_functions(uchar,UCharArray)
 
 // Whenever any of the JNI classes loads, load the native library.
 %pragma(java) jniclasscode=%{
@@ -53,6 +54,12 @@ typedef std::pair<usint, usint> pair_type;
 // memory of. TODO: get them all.
 %newobject RLCSA::display(usint sequence, bool include_end_marker = false);
 %newobject RLCSA::display(usint sequence, pair_type range) const;
+
+uchar* RLCSA::display(usint sequence, pair_type range) const;
+
+// Those display methods don't null-terminate their strings. Make sure they are
+// arrays by only allowing certain uchar*s to be strings.
+%apply char* { uchar* pattern, uchar* base_name };
 
 %include "rlcsa.h"
 
