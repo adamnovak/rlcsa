@@ -12,6 +12,10 @@
 // And pointers
 %include "cpointer.i"
 
+// And integers of various sizes
+%include <stdint.i>
+
+
 %{
 #include "rlcsa.h"
 using namespace CSA;
@@ -28,6 +32,9 @@ typedef unsigned int  usint;
 typedef signed int    sint;
 
 #endif
+
+// uchars are unsigned chars.
+typedef unsigned char uchar;
 
 // Java needs to work with pair_types that are count results.
 typedef std::pair<usint, usint> pair_type;
@@ -58,8 +65,11 @@ typedef std::pair<usint, usint> pair_type;
 uchar* RLCSA::display(usint sequence, pair_type range) const;
 
 // Those display methods don't null-terminate their strings. Make sure they are
-// arrays by only allowing certain uchar*s to be strings.
+// arrays by not saying those uchar*s should be strings.
+
+// The other uchar*s are actually char*s (null-terminated strings)
 %apply char* { uchar* pattern, uchar* base_name };
+
 
 %include "rlcsa.h"
 

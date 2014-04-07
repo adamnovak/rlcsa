@@ -27,7 +27,8 @@
 
 #endif
 
-// Decide uchars are chars
+// Decide uchars are chars here (unlike in rlcsa.i), so every uchar* is a
+// string.
 typedef char uchar;
 
 // Make sure to rename these things that we swap out with #defines to a
