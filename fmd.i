@@ -80,6 +80,11 @@ public:
   usint countRuns();
 };
 
+// Since we will need to load and save range vectors to files, we need to expose
+// a minimal C FILE API.
+FILE* fopen(char* filename, char* mode);
+void fclose(FILE* file);
+
 // Java needs to work with vectors of mappings coming back from the map method.
 %template(MappingVector) std::vector<CSA::Mapping>; 
 
