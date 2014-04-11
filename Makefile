@@ -55,8 +55,8 @@ jar-install: rlcsa.jar
 	mvn install:install-file -Dfile=rlcsa.jar -DgroupId=fi.helsinki.cs \
 	-DartifactId=rlcsa -Dversion=1.0.0-SNAPSHOT -Dpackaging=jar
 
-rlcsa.a: $(OBJS)
-	ar rcs rlcsa.a $(OBJS)
+librlcsa.a: $(OBJS)
+	ar rcs librlcsa.a $(OBJS)
 	
 rlcsa.so: $(OBJS) $(SWIG_OBJS)
 	$(CXX) $(LDFLAGS) -shared -o rlcsa.so  $(OBJS) $(SWIG_OBJS)
@@ -64,56 +64,56 @@ rlcsa.so: $(OBJS) $(SWIG_OBJS)
 depend:
 	g++ -MM *.cpp bits/*.cpp misc/*.cpp utils/*.cpp > dependencies.mk
 
-rlcsa_test: rlcsa_test.o rlcsa.a
-	$(CXX) $(CXXFLAGS) -o rlcsa_test rlcsa_test.o rlcsa.a
+rlcsa_test: rlcsa_test.o librlcsa.a
+	$(CXX) $(CXXFLAGS) -o rlcsa_test rlcsa_test.o librlcsa.a
 
-lcp_test: lcp_test.o rlcsa.a
-	$(CXX) $(CXXFLAGS) -o lcp_test lcp_test.o rlcsa.a
+lcp_test: lcp_test.o librlcsa.a
+	$(CXX) $(CXXFLAGS) -o lcp_test lcp_test.o librlcsa.a
 
-parallel_build: parallel_build.o rlcsa.a
-	$(CXX) $(CXXFLAGS) -o parallel_build parallel_build.o rlcsa.a
+parallel_build: parallel_build.o librlcsa.a
+	$(CXX) $(CXXFLAGS) -o parallel_build parallel_build.o librlcsa.a
 
-build_rlcsa: build_rlcsa.o rlcsa.a
-	$(CXX) $(CXXFLAGS) -o build_rlcsa build_rlcsa.o rlcsa.a
+build_rlcsa: build_rlcsa.o librlcsa.a
+	$(CXX) $(CXXFLAGS) -o build_rlcsa build_rlcsa.o librlcsa.a
 	
-merge_rlcsa: merge_rlcsa.o rlcsa.a
-	$(CXX) $(CXXFLAGS) -o merge_rlcsa merge_rlcsa.o rlcsa.a
+merge_rlcsa: merge_rlcsa.o librlcsa.a
+	$(CXX) $(CXXFLAGS) -o merge_rlcsa merge_rlcsa.o librlcsa.a
 
-build_sa: build_sa.o rlcsa.a
-	$(CXX) $(CXXFLAGS) -o build_sa build_sa.o rlcsa.a
+build_sa: build_sa.o librlcsa.a
+	$(CXX) $(CXXFLAGS) -o build_sa build_sa.o librlcsa.a
 
-locate_test: locate_test.o rlcsa.a
-	$(CXX) $(CXXFLAGS) -o locate_test locate_test.o rlcsa.a
+locate_test: locate_test.o librlcsa.a
+	$(CXX) $(CXXFLAGS) -o locate_test locate_test.o librlcsa.a
 
-display_test: display_test.o rlcsa.a
-	$(CXX) $(CXXFLAGS) -o display_test display_test.o rlcsa.a
+display_test: display_test.o librlcsa.a
+	$(CXX) $(CXXFLAGS) -o display_test display_test.o librlcsa.a
 
-document_graph: document_graph.o rlcsa.a
-	$(CXX) $(CXXFLAGS) -o $@ $@.o rlcsa.a
+document_graph: document_graph.o librlcsa.a
+	$(CXX) $(CXXFLAGS) -o $@ $@.o librlcsa.a
 
-read_bwt: read_bwt.o rlcsa.a
-	$(CXX) $(CXXFLAGS) -o read_bwt read_bwt.o rlcsa.a
+read_bwt: read_bwt.o librlcsa.a
+	$(CXX) $(CXXFLAGS) -o read_bwt read_bwt.o librlcsa.a
 
-extract_sequence: extract_sequence.o rlcsa.a
-	$(CXX) $(CXXFLAGS) -o extract_sequence extract_sequence.o rlcsa.a
+extract_sequence: extract_sequence.o librlcsa.a
+	$(CXX) $(CXXFLAGS) -o extract_sequence extract_sequence.o librlcsa.a
 
-rlcsa_grep: rlcsa_grep.o rlcsa.a
-	$(CXX) $(CXXFLAGS) -o rlcsa_grep rlcsa_grep.o rlcsa.a
+rlcsa_grep: rlcsa_grep.o librlcsa.a
+	$(CXX) $(CXXFLAGS) -o rlcsa_grep rlcsa_grep.o librlcsa.a
 	
-fmd_grep: fmd_grep.o rlcsa.a
-	$(CXX) $(CXXFLAGS) -o fmd_grep fmd_grep.o rlcsa.a
+fmd_grep: fmd_grep.o librlcsa.a
+	$(CXX) $(CXXFLAGS) -o fmd_grep fmd_grep.o librlcsa.a
 
-build_plcp: build_plcp.o rlcsa.a
-	$(CXX) $(CXXFLAGS) -o build_plcp build_plcp.o rlcsa.a
+build_plcp: build_plcp.o librlcsa.a
+	$(CXX) $(CXXFLAGS) -o build_plcp build_plcp.o librlcsa.a
 
-sample_lcp: sample_lcp.o rlcsa.a
-	$(CXX) $(CXXFLAGS) -o sample_lcp sample_lcp.o rlcsa.a
+sample_lcp: sample_lcp.o librlcsa.a
+	$(CXX) $(CXXFLAGS) -o sample_lcp sample_lcp.o librlcsa.a
 
-sampler_test: sampler_test.o rlcsa.a
-	$(CXX) $(CXXFLAGS) -o sampler_test sampler_test.o rlcsa.a
+sampler_test: sampler_test.o librlcsa.a
+	$(CXX) $(CXXFLAGS) -o sampler_test sampler_test.o librlcsa.a
 
-ss_test: ss_test.o rlcsa.a
-	$(CXX) $(CXXFLAGS) -o ss_test ss_test.o rlcsa.a
+ss_test: ss_test.o librlcsa.a
+	$(CXX) $(CXXFLAGS) -o ss_test ss_test.o librlcsa.a
 
 extract_text: extract_text.o
 	$(CXX) $(CXXFLAGS) -o utils/extract_text extract_text.o
@@ -139,7 +139,7 @@ genpatterns: genpatterns.c
 	swig -c++ -java -outdir java -package $(JAVA_PACKAGE) $(SIZE_FLAGS) $(VECTOR_FLAGS) $^
 
 clean:
-	rm -f rlcsa.a
+	rm -f librlcsa.a
 	rm -f rlcsa.so
 	rm -f $(PROGRAMS)
 	rm -f *.o bits/*.o misc/*.o utils/*.o
