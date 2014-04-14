@@ -51,7 +51,8 @@ static const usint NUM_BASES = 5;
 // time the order of the bases matters is when doing the iterative scoping out
 // of the reverse complement intervals in the extension procedure, and there we
 // need to go through them in this order.
-static const std::string BASES;
+// See <http://stackoverflow.com/q/2312860/402891>
+extern const std::string BASES;
 
 
 /**
@@ -116,6 +117,11 @@ struct FMDPosition
    * forward interval and visa versa.
    */
   FMDPosition flip() const;
+  
+  /**
+   * Are two FMDPositions equal?
+   */
+  bool operator==(const FMDPosition& other) const;
   
   /**
    * Is an FMDPosition empty?
@@ -186,6 +192,9 @@ struct MapAttemptResult
   usint characters;
 };
 
+// Forward declaration for circular dependency
+class FMD;
+
 /**
  * Represents an iterator over the suffix tree defined by an FMDIndex, yielding
  * the suffix tree suffixes and associated FMDPositions for all suffixes of a
@@ -201,12 +210,12 @@ class FMDIterator
      *
      * Depth may not be 0.
      */
-    FMDIterator(const FMD& parent, usint depth, bool beEnd=false)
+    FMDIterator(const FMD& parent, usint depth, bool beEnd=false);
     
     /**
      * Copy the given FMDIterator.
      */
-    FMDIterator(const FMDIterator& toCopy)
+    FMDIterator(const FMDIterator& toCopy);
     
     /**
      * Pre-increment. Advance and return a reference to ourselves.
@@ -248,7 +257,7 @@ class FMDIterator
      * frame we can recurse on the next character). It isn't a real stack
      * because we do need to traverse it to do things like iterator equality.
      */
-    std::deque<std::pair<FMDPosition, usint>> stack;
+    std::deque<std::pair<FMDPosition, usint> > stack;
     
     /**
      * Holds the string corresponding to the current FMDPosition on top of the

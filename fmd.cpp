@@ -23,6 +23,15 @@ FMDPosition::flip() const
   return FMDPosition(reverse_start, forward_start, end_offset);
 }
 
+bool FMDPosition::operator==(const FMDPosition& other) const
+{
+  // Compare all the fields.
+  return
+    forward_start == other.forward_start &&
+    reverse_start == other.reverse_start &&
+    end_offset == other.end_offset;
+}
+
 sint
 FMDPosition::range(const RangeVector& ranges) const
 {
@@ -129,21 +138,20 @@ std::pair<std::string, FMDPosition> FMDIterator::operator*() const
 { 
   // Grab the pattern and the FMDPosition from the top of the stack to go with
   // it.
-  return make_pair(pattern, stack.top().first);
+  return std::make_pair(pattern, stack.back().first);
 }
 
 bool FMDIterator::operator==(const FMDIterator& other) const
 {
   return 
-    // We have the same parents
-    parent == other.parent && 
+    // We have the same parent addresses
+    &parent == &(other.parent) && 
     // And go to the same depth
     depth == other.depth && 
     // And are at the same depth
     stack.size() == other.stack.size() && 
     // And followed the same path to get there
-    std::equals(stack.begin(), stack.end(), other.stack.begin(), 
-      other.stack.end()) && 
+    std::equal(stack.begin(), stack.end(), other.stack.begin()) && 
     // And we have the same string pattern (which the above should imply)
     pattern == other.pattern;
 }
@@ -181,11 +189,13 @@ void FMDIterator::search()
       // subtree. That means this subtree has been exhausted and we should pop
       // and try the next one over, which we will do on the next loop iteration.
     }
-    while(stack.size() > 0)
+    while(stack.size() > 0);
     
     // If we get here, we have gone all the way back up and popped and tried
     // replacing everything with no more results. That means we have finished
     // the search, and should be equal to end.
+    
+  }
 }
 
 bool FMDIterator::recurse(usint baseNumber)
@@ -193,7 +203,7 @@ bool FMDIterator::recurse(usint baseNumber)
   // Work out what we would select if we extended forwards with this letter
   // (i.e. appended it to the suffix).
   FMDPosition extension = parent.extend(stack.back().first, BASES[baseNumber],
-    false)
+    false);
   
   if(extension.isEmpty())
   {
@@ -203,7 +213,7 @@ bool FMDIterator::recurse(usint baseNumber)
   
   // This would not be a dead end. Go there.
   // Add a stack frame
-  stack.push_back(make_pair(extension, baseNumber));
+  stack.push_back(std::make_pair(extension, baseNumber));
   // And record the change to the pattern.
   pattern.push_back(BASES[baseNumber]);
   
@@ -214,10 +224,10 @@ bool FMDIterator::tryRecurse(usint baseNumber)
 {
   // Try every base number after the given starting one until we either recurse
   // or run out.
-  for(usint i = baseNumber; i < NUM_BASES && !recurse(i); i++);
+  for(; baseNumber < NUM_BASES && !recurse(baseNumber); baseNumber++);
   
   // If we didn't run out, we must have successfully recursed.
-  return i < NUM_BASES;
+  return baseNumber < NUM_BASES;
 }
 
 bool FMDIterator::tryRecurseToDepth(usint baseNumber)
@@ -256,12 +266,17 @@ bool FMDIterator::tryRecurseToDepth(usint baseNumber)
 std::pair<FMDPosition, usint> FMDIterator::pop()
 {
   // Drop the character that this added to the pattern.
-  pattern.pop_back();
-  // Remove and return the stack frame.
-  return stack.pop_back();
+  pattern.erase(pattern.size() - 1, 1);
+  
+  // Grab the stack frame to return
+  std::pair<FMDPosition, usint> toReturn(stack.back());
+  
+  // Drop it from the stack.
+  stack.pop_back();
+  
+  // Return it
+  return toReturn;
 }
-
-FMDIterator::letters = "ACGTN";
 
 FMD::FMD(const std::string& base_name, bool print): 
   RLCSA(base_name, print)
@@ -718,7 +733,7 @@ FMD::map(const std::string& query, usint start, sint length) const
   // Other fields get overwritten.
   location.position = EMPTY_FMD_POSITION;
   
-  for(sint i = start; i < start + length; i++)
+  for(sint i = start; i < (sint)(start + length); i++)
   {
     if(location.position.isEmpty())
     {
