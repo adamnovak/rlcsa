@@ -949,6 +949,19 @@ FMD::map(const RangeVector& ranges, const std::string& query, usint start,
     
 }
 
+FMD::iterator FMD::begin(usint depth) const
+{
+  // Make a new suffix tree iterator that automatically searches out the first
+  // suffix of the right length.
+  return FMD::iterator(*this, depth, false);
+}
+     
+FMD::iterator FMD::end(usint depth) const
+{
+  // Make a new suffix tree iterator that is just a 1-past-the-end sentinel.
+  return FMD::iterator(*this, depth, true);
+}
+
 FMDPosition
 FMD::getSAPosition() const
 {

@@ -238,6 +238,8 @@ class FMDIterator
      * Equality check operator.
      */
     bool operator==(const FMDIterator& other) const;
+    
+    // Default assignment operator is fine.
   
   private:
     /**
@@ -298,8 +300,7 @@ class FMDIterator
      */
     std::pair<FMDPosition, usint> pop();
     
-    // We don't allow assignment.
-    FMDIterator& operator=(const FMDIterator& other);
+    
     
 };
 
