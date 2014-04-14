@@ -206,6 +206,12 @@ void FMDIterator::search()
 
 bool FMDIterator::recurse(usint baseNumber)
 {
+  if(baseNumber >= NUM_BASES)
+  {
+    // Don't even try out-of-range bases.
+    return false;
+  }
+  
   // Work out what we would select if we extended forwards with this letter
   // (i.e. appended it to the suffix).
   FMDPosition extension = parent.extend(stack.back().first, BASES[baseNumber],
