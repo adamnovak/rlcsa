@@ -239,6 +239,11 @@ class FMDIterator
      */
     bool operator==(const FMDIterator& other) const;
     
+    /**
+     * Inquality check operator.
+     */
+    bool operator!=(const FMDIterator& other) const;
+    
     // Default assignment operator is fine.
   
   private:

@@ -156,6 +156,12 @@ bool FMDIterator::operator==(const FMDIterator& other) const
     pattern == other.pattern;
 }
 
+bool FMDIterator::operator!=(const FMDIterator& other) const
+{
+  // Just use the equality check.
+  return !(*this == other);
+}
+
 void FMDIterator::search()
 {
   // TODO: Unify with tryRecurseToDepth by making its topDepth a parameter.
