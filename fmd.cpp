@@ -212,10 +212,23 @@ bool FMDIterator::recurse(usint baseNumber)
     return false;
   }
   
-  // Work out what we would select if we extended forwards with this letter
-  // (i.e. appended it to the suffix).
-  FMDPosition extension = parent.extend(stack.back().first, BASES[baseNumber],
-    false);
+  // What will we extend to?
+  FMDPosition extension;
+  
+  if(stack.size() == 0)
+  {
+    // Our "extension" is just starting with this base.
+    extension = parent.getCharPosition(BASES[baseNumber]);
+  }
+  else
+  {
+    // Work out what we would select if we extended forwards with this letter
+    // (i.e. appended it to the suffix).
+    extension = parent.extend(stack.back().first, BASES[baseNumber],
+      false);
+  }
+  
+  
   
   if(extension.isEmpty())
   {

@@ -322,6 +322,9 @@ class FMDIterator
  */
 class FMD : public RLCSA
 {
+  // Let suffix tree iterators use our fancy private methods.
+  friend class FMDIterator;
+
   public:
     // We can only be constructed on a previously generated RLCSA index that
     // just happens to meet our requirements.
