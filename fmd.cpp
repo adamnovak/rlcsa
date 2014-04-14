@@ -4,6 +4,8 @@
 namespace CSA
 {
 
+const std::string BASES = "TGCNA";
+
 FMDPosition::FMDPosition(usint forward_start, usint reverse_start,
   usint end_offset): forward_start(forward_start), reverse_start(reverse_start),
   end_offset(end_offset)
@@ -80,6 +82,186 @@ Mapping::Mapping(pair_type location, bool is_mapped): location(location),
   is_mapped(is_mapped)
 {
 }
+
+// Stuff for FMDIterators that traverse the suffix tree.
+
+FMDIterator::FMDIterator(const FMD& parent, usint depth, bool beEnd): 
+  parent(parent), depth(depth), stack(), pattern()
+{
+  // By default we start out with empty everything, which is what we should have
+  // at the end.
+  
+  if(!beEnd) 
+  {
+    // Start at the beginning.
+    search();
+  }
+}
+
+FMDIterator::FMDIterator(const FMDIterator& toCopy): parent(toCopy.parent), 
+  depth(toCopy.depth), stack(toCopy.stack), pattern(toCopy.pattern)
+{
+  // Already made a duplicate stack. Nothing to do.
+}
+
+FMDIterator& FMDIterator::operator++()
+{
+  // Advance
+  search();
+  
+  // Return ourselves.
+  return *this;
+}
+
+FMDIterator FMDIterator::operator++(int)
+{
+  // Copy ourselves
+  FMDIterator copy(*this);
+  
+  // Advance
+  search();
+  
+  // Return the copy
+  return copy;
+}
+
+std::pair<std::string, FMDPosition> FMDIterator::operator*() const 
+{ 
+  // Grab the pattern and the FMDPosition from the top of the stack to go with
+  // it.
+  return make_pair(pattern, stack.top().first);
+}
+
+bool FMDIterator::operator==(const FMDIterator& other) const
+{
+  return 
+    // We have the same parents
+    parent == other.parent && 
+    // And go to the same depth
+    depth == other.depth && 
+    // And are at the same depth
+    stack.size() == other.stack.size() && 
+    // And followed the same path to get there
+    std::equals(stack.begin(), stack.end(), other.stack.begin(), 
+      other.stack.end()) && 
+    // And we have the same string pattern (which the above should imply)
+    pattern == other.pattern;
+}
+
+void FMDIterator::search()
+{
+  // TODO: Unify with tryRecurseToDepth by making its topDepth a parameter.
+
+  if(stack.size() == 0) 
+  {
+    // Try to recurse down to depth, starting with base 0 at the root branch.
+    tryRecurseToDepth(0);
+    
+    // Now we are either at the correct depth at the leftmost suffix tree node,
+    // or in the state we started in (which is equal to end). So we are done.
+  } 
+  else 
+  {
+    // We must have already been at the right depth.
+    
+    do
+    {
+      // Pop the bottom frame (already explored).
+      std::pair<FMDPosition, usint> lastFrame = pop();
+      
+      // Try recursing to the next thing at that same level and then down to the
+      // required depth.
+      if(tryRecurseToDepth(lastFrame.second + 1))
+      {
+        // We got something at the required depth.
+        return;
+      }
+      
+      // Otherwise, we didn't get something at the required depth in this
+      // subtree. That means this subtree has been exhausted and we should pop
+      // and try the next one over, which we will do on the next loop iteration.
+    }
+    while(stack.size() > 0)
+    
+    // If we get here, we have gone all the way back up and popped and tried
+    // replacing everything with no more results. That means we have finished
+    // the search, and should be equal to end.
+}
+
+bool FMDIterator::recurse(usint baseNumber)
+{
+  // Work out what we would select if we extended forwards with this letter
+  // (i.e. appended it to the suffix).
+  FMDPosition extension = parent.extend(stack.back().first, BASES[baseNumber],
+    false)
+  
+  if(extension.isEmpty())
+  {
+    // This would be a dead end.
+    return false;
+  }
+  
+  // This would not be a dead end. Go there.
+  // Add a stack frame
+  stack.push_back(make_pair(extension, baseNumber));
+  // And record the change to the pattern.
+  pattern.push_back(BASES[baseNumber]);
+  
+  return true;
+}
+
+bool FMDIterator::tryRecurse(usint baseNumber)
+{
+  // Try every base number after the given starting one until we either recurse
+  // or run out.
+  for(usint i = baseNumber; i < NUM_BASES && !recurse(i); i++);
+  
+  // If we didn't run out, we must have successfully recursed.
+  return i < NUM_BASES;
+}
+
+bool FMDIterator::tryRecurseToDepth(usint baseNumber)
+{
+  // What depth should we not go above?
+  size_t topDepth = stack.size();
+  
+  while(stack.size() < depth)
+  {
+    // Until we get to the right depth...
+    
+    // We never go into an empty thing.
+    // So we must be at a shallower depth. Try to go deeper.
+    
+    if(tryRecurse(baseNumber)) {
+      // We made it down. Reset baseNumber
+      baseNumber = 0;
+    } else {
+      // We can't go to anything nonempty down. So we should try going up.
+      
+      if(stack.size() == topDepth) {
+        // We don't want to go any higher than this. Give up on finding a
+        // nonempty thing at the right depth in this subtree.
+        return false;
+      }
+      
+      // Otherwise, go up and continue on the next branch.
+      baseNumber = pop().second + 1;
+    }
+  }
+  
+  // We got to the right depth, and we never go to empty things.
+  return true;
+}
+
+std::pair<FMDPosition, usint> FMDIterator::pop()
+{
+  // Drop the character that this added to the pattern.
+  pattern.pop_back();
+  // Remove and return the stack frame.
+  return stack.pop_back();
+}
+
+FMDIterator::letters = "ACGTN";
 
 FMD::FMD(const std::string& base_name, bool print): 
   RLCSA(base_name, print)

@@ -15,6 +15,8 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <utility>
+#include <stack>
 
 #include "bits/deltavector.h"
 #include "bits/rlevector.h"
@@ -49,7 +51,7 @@ static const usint NUM_BASES = 5;
 // time the order of the bases matters is when doing the iterative scoping out
 // of the reverse complement intervals in the extension procedure, and there we
 // need to go through them in this order.
-static const std::string BASES = "TGCNA";
+static const std::string BASES;
 
 
 /**
@@ -185,6 +187,114 @@ struct MapAttemptResult
 };
 
 /**
+ * Represents an iterator over the suffix tree defined by an FMDIndex, yielding
+ * the suffix tree suffixes and associated FMDPositions for all suffixes of a
+ * given length.
+ */
+class FMDIterator
+{
+  public:
+    /**
+     * Make a new FMDIterator that iterates over the suffix tree of the given
+     * FMDIndex at the given depth. If beEnd is set, it skips right to the end
+     * to be a 1-past-the-end sentinel.
+     *
+     * Depth may not be 0.
+     */
+    FMDIterator(const FMD& parent, usint depth, bool beEnd=false)
+    
+    /**
+     * Copy the given FMDIterator.
+     */
+    FMDIterator(const FMDIterator& toCopy)
+    
+    /**
+     * Pre-increment. Advance and return a reference to ourselves.
+     */
+    FMDIterator& operator++();
+    
+    /**
+     * Post-increment (which is distinguished by the imaginary int argument).
+     * Increment ourselves, and return the previous version by value.
+     */
+    FMDIterator operator++(int);
+    
+    /**
+     * Dereference operator: get the string suffix and the FMDPosition
+     * corresponding to it.
+     */
+    std::pair<std::string, FMDPosition> operator*() const;
+    
+    /**
+     * Equality check operator.
+     */
+    bool operator==(const FMDIterator& other) const;
+  
+  private:
+    /**
+     * Keep a reference to the parent.
+     */
+    const FMD& parent;
+    
+    /**
+     * How deep should this iterator go?
+     */
+    usint depth;
+    
+    /**
+     * This holds a stack for the depth-first search, containing the FMDPosition
+     * reached at each level, and the number of the base in BASES that was
+     * recursed on to produce that level (so that when we go back to that stack
+     * frame we can recurse on the next character). It isn't a real stack
+     * because we do need to traverse it to do things like iterator equality.
+     */
+    std::deque<std::pair<FMDPosition, usint>> stack;
+    
+    /**
+     * Holds the string corresponding to the current FMDPosition on top of the
+     * stack.
+     */
+    std::string pattern;
+    
+    /**
+     * Run the depth-first search until we either find a non-empty FMDPosition
+     * at the correct depth, or run out of tree.
+     */
+    void search();
+    
+    /**
+     * Recurse on the base with the given number. Returns true if that was
+     * actually done, or false if that would have resulted in an empty range.
+     */
+    bool recurse(usint baseNumber);
+    
+    /**
+     * Try recursing with all base numbers, starting from the given one. Take
+     * the first one that succeeds and return true, or if none succeed return
+     * false.
+     */
+    bool tryRecurse(usint baseNumber);
+    
+    /**
+     * Try recursing to a non-empty interval at the iterator's specified depth,
+     * starting by exploring the given base number and continuing, if necessary,
+     * with base numbers increasing from there. Returns true if a max-depth non-
+     * empty interval was found, and false otherwise.
+     */
+    bool tryRecurseToDepth(usint baseNumber);
+    
+    
+    /**
+     * Pop the top stack frame.
+     */
+    std::pair<FMDPosition, usint> pop();
+    
+    // We don't allow assignment.
+    FMDIterator& operator=(const FMDIterator& other);
+    
+};
+
+/**
  * Defines an RLCSA index derivative that represents an FMD-index: an index of
  * DNA sequences (over the alphabet {A, C, G, T, N}) where all texts are present
  * with their reverse complements.
@@ -294,6 +404,28 @@ class FMD : public RLCSA
      */
     std::vector<sint> map(const RangeVector& ranges,
       const std::string& query, usint start = 0, sint length = -1) const;
+      
+    /**
+     * We have an iterator typedef, so we can get an iterator over the suffix
+     * tree easily.
+     */
+    typedef FMDIterator iterator;
+    /**
+     * const_iterator is the same as the normal iterator, since it would be
+     * silly to try and modify the suffix tree we're iterating over.
+     */
+    typedef FMDIterator const_iterator;
+    
+    /**
+     * Get an iterator pointing to the first range in the suffix tree, iterating
+     * down to the given depth.
+     */
+    iterator begin(usint depth) const;
+     
+    /**
+     * Get a 1-past-the-end sentinel iterator for the given depth.
+     */
+    iterator end(usint depth) const;
       
   private:
     /**
