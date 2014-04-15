@@ -137,16 +137,16 @@ FMDIterator FMDIterator::operator++(int)
 std::pair<std::string, FMDPosition> FMDIterator::operator*() const 
 { 
   // Grab the FMSPosition we want to return
-  FMDPosition toConvert = stack.back().first 
+  FMDPosition toConvert = stack.back().first; 
   
   // We need to convert it from BWT coordinates (which we use internally for
   // extension) and SA coordinates (which are natural for locate).
-  convertToSAIndex(toConvert.forward_start);
-  convertToSAIndex(toConvert.reverse_start);
+  parent.convertToSAIndex(toConvert.forward_start);
+  parent.convertToSAIndex(toConvert.reverse_start);
   
   // Grab the pattern and the FMDPosition from the top of the stack to go with
   // it.
-  return std::make_pair(pattern, toReturn);
+  return std::make_pair(pattern, toConvert);
 }
 
 bool FMDIterator::operator==(const FMDIterator& other) const
