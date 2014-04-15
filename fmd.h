@@ -199,6 +199,9 @@ class FMD;
  * Represents an iterator over the suffix tree defined by an FMDIndex, yielding
  * the suffix tree suffixes and associated FMDPositions for all suffixes of a
  * given length.
+ *
+ * The FMDPositions obtained from this iterator are in SA space, but internally
+ * the iterator works in BWT space.
  */
 class FMDIterator
 {
@@ -229,7 +232,7 @@ class FMDIterator
     FMDIterator operator++(int);
     
     /**
-     * Dereference operator: get the string suffix and the FMDPosition
+     * Dereference operator: get the string suffix and the SA-space FMDPosition
      * corresponding to it.
      */
     std::pair<std::string, FMDPosition> operator*() const;
