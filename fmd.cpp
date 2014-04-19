@@ -5,6 +5,7 @@ namespace CSA
 {
 
 const std::string BASES = "TGCNA";
+const std::string ALPHABETICAL_BASES = "ACGNT";
 
 FMDPosition::FMDPosition(usint forward_start, usint reverse_start,
   usint end_offset): forward_start(forward_start), reverse_start(reverse_start),
@@ -226,14 +227,14 @@ bool FMDIterator::recurse(usint baseNumber)
   if(stack.size() == 0)
   {
     // Our "extension" is just starting with this base.
-    extension = parent.getCharPosition(BASES[baseNumber]);
+    extension = parent.getCharPosition(ALPHABETICAL_BASES[baseNumber]);
   }
   else
   {
     // Work out what we would select if we extended forwards with this letter
     // (i.e. appended it to the suffix).
-    extension = parent.extend(stack.back().first, BASES[baseNumber],
-      false);
+    extension = parent.extend(stack.back().first, 
+      ALPHABETICAL_BASES[baseNumber], false);
   }
   
   
@@ -248,7 +249,7 @@ bool FMDIterator::recurse(usint baseNumber)
   // Add a stack frame
   stack.push_back(std::make_pair(extension, baseNumber));
   // And record the change to the pattern.
-  pattern.push_back(BASES[baseNumber]);
+  pattern.push_back(ALPHABETICAL_BASES[baseNumber]);
   
   return true;
 }

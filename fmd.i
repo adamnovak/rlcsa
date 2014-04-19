@@ -118,4 +118,3 @@ typedef std::pair<usint, usint> pair_type;
 
 %import "rlcsa.h"
 %include "fmd.h"
-

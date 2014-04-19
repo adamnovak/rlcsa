@@ -47,12 +47,16 @@ namespace CSA
 
 static const usint NUM_BASES = 5;
 
-// This holds the bases in alphabetcal order by reverse complement. The only
-// time the order of the bases matters is when doing the iterative scoping out
-// of the reverse complement intervals in the extension procedure, and there we
-// need to go through them in this order.
-// See <http://stackoverflow.com/q/2312860/402891>
+// This holds the bases in alphabetcal order by reverse complement. This order
+// is needed when doing the iterative scoping out of the reverse complement
+// intervals in the extension procedure, and there we need to go through them in
+// this order. See <http://stackoverflow.com/q/2312860/402891>
 extern const std::string BASES;
+
+// This holds the bases in alphabetical order, which is the same as their sort
+// order in the BWT, and is the order that FMDIterator needs to go through them
+// in.
+extern const std::string ALPHABETICAL_BASES;
 
 
 /**
