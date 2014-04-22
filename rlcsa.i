@@ -15,6 +15,17 @@
 // And integers of various sizes
 %include <stdint.i>
 
+// Set up exception not-killing-the-process-ness. See
+// <http://www.swig.org/Doc1.3/Library.html#Library_nn17>
+%include "exception.i"
+
+%exception {
+  try {
+    $action
+  } catch (const std::exception& e) {
+    SWIG_exception(SWIG_RuntimeError, e.what());
+  }
+}
 
 %{
 #include "rlcsa.h"
