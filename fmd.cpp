@@ -873,9 +873,11 @@ FMD::map(const RangeVector& ranges, const std::string& query, usint start,
   
   // RIGHT-map to a range.
     
-  // Fix up the length parameter if it is -1: that means the whole rest of the
-  // string.
-  length = query.length() - start;
+  if(length == -1) {
+    // Fix up the length parameter if it is -1: that means the whole rest of the
+    // string.
+    length = query.length() - start;
+  }
   
   // We need a vector to return.
   std::vector<sint> mappings;
@@ -920,7 +922,7 @@ FMD::map(const RangeVector& ranges, const std::string& query, usint start,
       // subsumed by a range.
       
       INFO(std::cout << "Mapped " << location.characters << 
-        " context to range " << range << std::endl;)
+        " context to range #" << range << " in range vector." << std::endl;)
       
       // Remember that this base mapped to this range
       mappings.push_back(range);
@@ -941,8 +943,8 @@ FMD::map(const RangeVector& ranges, const std::string& query, usint start,
         
         INFO(std::cout << "Restarting from here..." << std::endl;)
         
-        // Move the loop index back
-        i--;
+        // Move the loop index towards the end we started from (right)
+        i++;
         
         // Since the FMDPosition is empty, on the next iteration we will retry
         // this base.
