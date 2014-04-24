@@ -147,6 +147,9 @@ struct FMDPosition
    * Return the index of the range that the forward-strand interval of this
    * FMDPosition is contained in, or -1 if it is not contained in any such
    * interval.
+   *
+   * Note that empty intervals (where the end is before the start) may still be
+   * contained in ranges.
    */
   sint range(const RangeVector& ranges) const;
   

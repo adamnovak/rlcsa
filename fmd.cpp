@@ -916,10 +916,10 @@ FMD::map(const RangeVector& ranges, const std::string& query, usint start,
     // moved) correspond to, if any?
     sint range = location.position.range(ranges);
     
-    if(location.is_mapped && range != -1)
+    if(location.is_mapped && !location.position.isEmpty() && range != -1)
     {
       // It mapped. We didn't do a re-start and fail, and our interval is
-      // subsumed by a range.
+      // nonempty and subsumed by a range.
       
       INFO(std::cout << "Mapped " << location.characters << 
         " context to range #" << range << " in range vector." << std::endl;)
