@@ -324,7 +324,10 @@ bool FMDIterator::tryRecurseToDepth(usint baseNumber)
         // stop so that we yield them. Those positions will be the first ones in
         // our range if they exist.
         
-        // See what we would get if we extended.
+        // See what we would get if we extended. TODO: Can we show that this
+        // will always work? It seems to work when there are none of the first
+        // base, and should always work when there is some of the first base,
+        // but I'm not sure it won't break.
         FMDPosition extension = parent.extend(stack.back().first, 
           ALPHABETICAL_BASES[0], false);
           
