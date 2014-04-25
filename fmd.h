@@ -216,11 +216,14 @@ class FMDIterator
     /**
      * Make a new FMDIterator that iterates over the suffix tree of the given
      * FMDIndex at the given depth. If beEnd is set, it skips right to the end
-     * to be a 1-past-the-end sentinel.
+     * to be a 1-past-the-end sentinel. If reportDeadEnds is set, will also
+     * include suffixes at depths shorter than the given depth that end in an
+     * end of text.
      *
      * Depth may not be 0.
      */
-    FMDIterator(const FMD& parent, usint depth, bool beEnd=false);
+    FMDIterator(const FMD& parent, usint depth, bool beEnd=false,
+        bool reportDeadEnds=false);
     
     /**
      * Copy the given FMDIterator.
@@ -266,6 +269,13 @@ class FMDIterator
      * How deep should this iterator go?
      */
     usint depth;
+    
+    /**
+     * Should this iterator only yield things of the appropriate depth? Or
+     * should it also yield dead ends of a shallower depth caused by contexts
+     * that run into the end of the text?
+     */
+    bool reportDeadEnds;
     
     /**
      * This holds a stack for the depth-first search, containing the FMDPosition
@@ -446,14 +456,17 @@ class FMD : public RLCSA
     
     /**
      * Get an iterator pointing to the first range in the suffix tree, iterating
-     * down to the given depth.
+     * down to the given depth. If reportDeadEnds is set, will yield shorter-
+     * than-depth contexts that happen before end of texts.
      */
-    iterator begin(usint depth) const;
+    iterator begin(usint depth, bool reportDeadEnds=false) const;
      
     /**
      * Get a 1-past-the-end sentinel iterator for the given depth.
+     * reportDeadEnds should match whatever was specified on the corresponding
+     * begin.
      */
-    iterator end(usint depth) const;
+    iterator end(usint depth, bool reportDeadEnds=false) const;
       
   private:
     /**

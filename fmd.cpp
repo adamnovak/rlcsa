@@ -1,5 +1,6 @@
 #include "fmd.h"
 #include <algorithm>
+#include <stdexcept>
 
 namespace CSA
 {
@@ -95,8 +96,10 @@ Mapping::Mapping(pair_type location, bool is_mapped): location(location),
 
 // Stuff for FMDIterators that traverse the suffix tree.
 
-FMDIterator::FMDIterator(const FMD& parent, usint depth, bool beEnd): 
-  parent(parent), depth(depth), stack(), pattern()
+FMDIterator::FMDIterator(const FMD& parent, usint depth, bool beEnd,
+    bool reportDeadEnds): 
+  parent(parent), depth(depth), reportDeadEnds(reportDeadEnds), stack(),
+  pattern()
 {
   // By default we start out with empty everything, which is what we should have
   // at the end.
@@ -109,7 +112,8 @@ FMDIterator::FMDIterator(const FMD& parent, usint depth, bool beEnd):
 }
 
 FMDIterator::FMDIterator(const FMDIterator& toCopy): parent(toCopy.parent), 
-  depth(toCopy.depth), stack(toCopy.stack), pattern(toCopy.pattern)
+  depth(toCopy.depth), reportDeadEnds(toCopy.reportDeadEnds),
+  stack(toCopy.stack), pattern(toCopy.pattern)
 {
   // Already made a duplicate stack. Nothing to do.
 }
@@ -157,6 +161,8 @@ bool FMDIterator::operator==(const FMDIterator& other) const
     &parent == &(other.parent) && 
     // And go to the same depth
     depth == other.depth && 
+    // And both report dead ends or not
+    reportDeadEnds == other.reportDeadEnds &&
     // And are at the same depth
     stack.size() == other.stack.size() && 
     // And followed the same path to get there
@@ -183,9 +189,9 @@ void FMDIterator::search()
     // Now we are either at the correct depth at the leftmost suffix tree node,
     // or in the state we started in (which is equal to end). So we are done.
   } 
-  else 
+  else if(stack.size() == depth) 
   {
-    // We must have already been at the right depth.
+    // We were at the right depth, meaning we don't need to recurse further.
     
     do
     {
@@ -210,6 +216,40 @@ void FMDIterator::search()
     // replacing everything with no more results. That means we have finished
     // the search, and should be equal to end.
     
+  } else if(reportDeadEnds) {
+    // We weren't at the right depth; we were at a node that happened to show up
+    // followed by a text end somewhere. Continue recursing from here.
+    
+    if(tryRecurseToDepth(0)) {
+      // We can just go down from here.
+      return;
+    }
+    
+    // Otherwise we need to pop up and continue the main recursion loop from
+    // above. TODO: Unify.
+    
+    do
+    {
+      // Pop the bottom frame (already explored).
+      std::pair<FMDPosition, usint> lastFrame = pop();
+      
+      // Try recursing to the next thing at that same level and then down to the
+      // required depth.
+      if(tryRecurseToDepth(lastFrame.second + 1))
+      {
+        // We got something at the required depth.
+        return;
+      }
+      
+      // Otherwise, we didn't get something at the required depth in this
+      // subtree. That means this subtree has been exhausted and we should pop
+      // and try the next one over, which we will do on the next loop iteration.
+    }
+    while(stack.size() > 0);    
+    
+  } else {
+    // We broke something.
+    throw std::runtime_error("Iterator was at wrong depth");
   }
 }
 
@@ -241,11 +281,11 @@ bool FMDIterator::recurse(usint baseNumber)
   
   if(extension.isEmpty())
   {
-    // This would be a dead end.
+    // This would be a suffix that doesn't appear.
     return false;
   }
   
-  // This would not be a dead end. Go there.
+  // This would not be an empty place. Go there.
   // Add a stack frame
   stack.push_back(std::make_pair(extension, baseNumber));
   // And record the change to the pattern.
@@ -279,6 +319,33 @@ bool FMDIterator::tryRecurseToDepth(usint baseNumber)
     if(tryRecurse(baseNumber)) {
       // We made it down. Reset baseNumber
       baseNumber = 0;
+      
+      if(reportDeadEnds && stack.size() < depth) {
+        // If we lose some range here (i.e. some positions are followed by end
+        // of text and don't show up in an extension with any base), we have to
+        // stop so that we yield them. Those positions will be the first ones in
+        // our range if they exist.
+        
+        // See what we would get if we extended.
+        FMDPosition extension = parent.extend(stack.back().first, 
+          ALPHABETICAL_BASES[0], false);
+          
+        if(extension.forward_start != stack.back().first.forward_start) {
+          // There are some suffixes that come into this node and leave before
+          // the first real base. They must end the text.
+          
+          DEBUG(
+            std::cout << "End of text: " << pattern << "$" << std::endl;
+            std::cout << extension << " vs. " << stack.back().first <<
+            std::endl;
+          )
+          
+          // We got to a place we want to yield.
+          return true;
+        }
+        
+      }
+      
     } else {
       // We can't go to anything nonempty down. So we should try going up.
       
@@ -985,17 +1052,17 @@ FMD::map(const RangeVector& ranges, const std::string& query, usint start,
     
 }
 
-FMD::iterator FMD::begin(usint depth) const
+FMD::iterator FMD::begin(usint depth, bool reportDeadEnds) const
 {
   // Make a new suffix tree iterator that automatically searches out the first
   // suffix of the right length.
-  return FMD::iterator(*this, depth, false);
+  return FMD::iterator(*this, depth, false, reportDeadEnds);
 }
      
-FMD::iterator FMD::end(usint depth) const
+FMD::iterator FMD::end(usint depth, bool reportDeadEnds) const
 {
   // Make a new suffix tree iterator that is just a 1-past-the-end sentinel.
-  return FMD::iterator(*this, depth, true);
+  return FMD::iterator(*this, depth, true, reportDeadEnds);
 }
 
 FMDPosition
