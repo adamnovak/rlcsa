@@ -8,8 +8,8 @@
 //#define DEBUG(op) op
 #define DEBUG(op)
 
-//#define INFO(op) op
-#define INFO(op)
+#define INFO(op) op
+//#define INFO(op)
 
 #include <fstream>
 #include <iostream>
@@ -212,13 +212,17 @@ class FMD;
  */
 class FMDIterator
 {
+  // TODO: Dramaticallt re-organize this class to not pass data up and down
+  // the call stack by putting it in member variables.
+
   public:
     /**
      * Make a new FMDIterator that iterates over the suffix tree of the given
      * FMDIndex at the given depth. If beEnd is set, it skips right to the end
      * to be a 1-past-the-end sentinel. If reportDeadEnds is set, will also
      * include suffixes at depths shorter than the given depth that end in an
-     * end of text.
+     * end of text. For those suffixes, the reverse ranges of the bi-intervals
+     * iterated over will not be valid!
      *
      * Depth may not be 0.
      */
@@ -291,6 +295,16 @@ class FMDIterator
      * stack.
      */
     std::string pattern;
+    
+    /**
+     * Keep track of the next value the iterator should return.
+     */
+    std::pair<std::string, FMDPosition> toYield;
+    
+    /**
+     * Set the next value to be returned when the iterator is dereferenced.
+     */
+    void yield(std::pair<std::string, FMDPosition> value);
     
     /**
      * Run the depth-first search until we either find a non-empty FMDPosition
