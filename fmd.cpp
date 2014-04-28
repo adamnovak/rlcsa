@@ -525,7 +525,7 @@ FMD::extend(FMDPosition range, usint c, bool backward) const
     
     for(usint base = 0; base < NUM_BASES; base++)
     {
-      // Go through the bases in arbitrary order and account for their lengths.
+      // Go through the bases in order and account for their lengths.
       endOfTextLength -= answers[base].getLength();
     }
     
@@ -855,9 +855,11 @@ std::vector<Mapping>
 FMD::map(const std::string& query, usint start, sint length) const
 {
 
-  // Fix up the length parameter if it is -1: that means the whole rest of the
-  // string.
-  length = query.length() - start;
+  if(length == -1) {
+    // Fix up the length parameter if it is -1: that means the whole rest of the
+    // string.
+    length = query.length() - start;
+  }
   
   // We need a vector to return.
   std::vector<Mapping> mappings;
