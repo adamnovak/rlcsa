@@ -405,6 +405,13 @@ class FMD : public RLCSA
       usint index) const;
       
     /**
+     * Do backwards search until you match a single range, run out of
+     * characters, or run out of results.
+     */
+    std::pair<sint, usint> countUntilUnique(const RangeVector& ranges,
+      const std::string& pattern, usint index) const;
+      
+    /**
      * Try left-mapping the given index in the given string, starting from
      * scratch. Start a backwards search at that index in the string and extend
      * left until we map to exactly one or zero places. Returns true or false
@@ -489,6 +496,12 @@ class FMD : public RLCSA
      */
     std::vector<Mapping> mapFM(const std::string& query, usint start = 0,
       sint length = -1) const;
+      
+    /**
+     * Map each base in the string to a range using FM-index search.
+     */
+    std::vector<sint> mapFM(const RangeVector& ranges,
+      const std::string& query, usint start = 0, sint length = -1) const;
       
     /**
      * We have an iterator typedef, so we can get an iterator over the suffix
