@@ -751,7 +751,7 @@ FMD::countUntilUnique(const std::string& pattern, usint index) const
     
     // Stop if we're empty.
     if(isEmpty(index_range)) {
-      std::make_pair(EMPTY_PAIR, index - i + 1);
+      return std::make_pair(EMPTY_PAIR, index - i + 1);
     }
     
     if(index_range.first == index_range.second) { 
