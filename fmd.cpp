@@ -94,6 +94,27 @@ Mapping::Mapping(pair_type location, bool is_mapped): location(location),
 {
 }
 
+bool
+Mapping::operator==(const Mapping& other) const
+{
+  return location == other.location && is_mapped == other.is_mapped;
+}
+
+std::ostream&
+operator<< (std::ostream& o, Mapping const& mapping)
+{
+  if(mapping.is_mapped)
+  {
+    o << "Text " << mapping.location.first << " offset " <<
+      mapping.location.second;
+  }
+  else
+  {
+    o << "-----------------";
+  }
+  return o;
+}
+
 // Stuff for FMDIterators that traverse the suffix tree.
 
 FMDIterator::FMDIterator(const FMD& parent, usint depth, bool beEnd,
@@ -696,6 +717,57 @@ FMD::fmdCount(const std::string& pattern, bool backward) const
   return index_position;
 }
 
+std::pair<pair_type, usint>
+FMD::countUntilUnique(const std::string& pattern, usint index) const
+{
+  // Mostly copied from the RLCSA count method.
+  
+  if(pattern.length() == 0 || index == 0) {
+    return std::make_pair(this->getSARange(), 0);
+  }
+
+  // Start at the index we want to map.
+  sint i = index;
+  // And with the range from just that character.
+  pair_type index_range = this->getCharRange((uchar)pattern[i]);
+  
+  // Make sure we aren't empty already.
+  if(isEmpty(index_range)) {
+    return std::make_pair(index_range, index - i + 1);
+  }
+  
+  if(index_range.first == index_range.second) { 
+    // We found a unique place. Return it.
+    this->convertToSARange(index_range);
+    return std::make_pair(index_range, index - i + 1);
+  }
+
+  for(--i; i >= 0; --i)
+  {
+    // For each base going left...
+  
+    // Apply the LF mapping to shrink the range.
+    index_range = this->LF(index_range, (uchar)pattern[i]);
+    
+    // Stop if we're empty.
+    if(isEmpty(index_range)) {
+      std::make_pair(EMPTY_PAIR, index - i + 1);
+    }
+    
+    if(index_range.first == index_range.second) { 
+      // We found a unique place. Return it.
+      this->convertToSARange(index_range);
+      return std::make_pair(index_range, index - i + 1);
+    }
+    
+  }
+  
+  // If we get here, we hit the start and still aren't unique. Report our too-
+  // big range.
+  this->convertToSARange(index_range);
+  return std::make_pair(index_range, index - i);
+}
+
 MapAttemptResult
 FMD::mapPosition(const std::string& pattern, usint index) const
 {
@@ -977,6 +1049,63 @@ FMD::map(const std::string& query, usint start, sint length) const
   return mappings;
   
 }
+
+std::vector<Mapping>
+FMD::mapFM(const std::string& query, usint start, sint length) const
+{
+
+  // The same as the above function, but without using extend.
+
+  if(length == -1) {
+    // Fix up the length parameter if it is -1: that means the whole rest of the
+    // string.
+    length = query.length() - start;
+  }
+  
+  // We need a vector to return.
+  std::vector<Mapping> mappings;
+  
+  for(sint i = start; i < (sint)(start + length); i++)
+  {
+    // For each base to map...
+
+    // Count left from there until we don't need to any more.
+    std::pair<pair_type, usint> countResult = countUntilUnique(query, i);
+    pair_type range = countResult.first;
+    usint characters = countResult.second;
+    
+    if(range.first == range.second) {
+      // We successfully mapped to just one place.
+      
+      // Locate it, and then report position as a (text, offset) pair. This will
+      // give us the position of the first base in the pattern, which lets us
+      // infer the position of the last base in the pattern.
+      pair_type text_location = getRelativePosition(locate(range.first));
+        
+      INFO(std::cout << "Mapped to text " << text_location.first << 
+        " position " << text_location.second << std::endl;)
+        
+      // Correct to the position of the last base in the pattern, by offsetting
+      // by the length of the pattern that was used. A 2-character pattern means
+      // we need to go 1 further right in the string it maps to to find where
+      // its rightmost character maps.
+      text_location.second += (characters - 1);
+      
+      // Add a Mapping for this mapped base.
+      mappings.push_back(Mapping(text_location));
+      
+    } else {
+      // We mapped to multiple or no places: no results
+      mappings.push_back(Mapping());
+      
+    }
+  }
+  
+  // We've gone through and attempted the whole string. Give back our answers.
+  return mappings;
+  
+}
+
 
 std::vector<sint> 
 FMD::map(const RangeVector& ranges, const std::string& query, usint start, 

@@ -183,7 +183,17 @@ struct Mapping
   bool is_mapped;
   Mapping();
   Mapping(pair_type location, bool is_mapped=true);
+  /**
+   * Provide equality comparison for testing.
+   */
+  bool operator==(const Mapping& other) const;
 };
+
+/**
+ * Provide pretty-printing for Mappings. See
+ * <http://www.parashift.com/c++-faq/output-operator.html>
+ */
+std::ostream& operator<< (std::ostream& o, Mapping const& mapping);
 
 /**
  * A triple to hold the return values from FMD::mapPosition() or
@@ -387,6 +397,14 @@ class FMD : public RLCSA
       const;
       
     /**
+     * Do backwards search until you find nothing or exactly one thing, or hit
+     * the end of the pattern. Return the resulting range in SA coordinates, and
+     * the number of characters used.
+     */
+    std::pair<pair_type, usint> countUntilUnique(const std::string& pattern,
+      usint index) const;
+      
+    /**
      * Try left-mapping the given index in the given string, starting from
      * scratch. Start a backwards search at that index in the string and extend
      * left until we map to exactly one or zero places. Returns true or false
@@ -456,6 +474,21 @@ class FMD : public RLCSA
      */
     std::vector<sint> map(const RangeVector& ranges,
       const std::string& query, usint start = 0, sint length = -1) const;
+      
+    /**
+     * Attempt to map each base in the query string to a (text, position) pair.
+     * The vector returned will have one entry for each character in the
+     * selected range.
+     *
+     * Uses FM-index search instead of FMD-index search.
+     *
+     * Optionally a start and length for the region to map can be specified. The
+     * whole string will be used as context, but only that region will actually
+     * be mapped. A length of -1 means to use the entire string after the start,
+     * and is the default.
+     */
+    std::vector<Mapping> mapFM(const std::string& query, usint start = 0,
+      sint length = -1) const;
       
     /**
      * We have an iterator typedef, so we can get an iterator over the suffix
