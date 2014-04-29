@@ -587,6 +587,7 @@ FMDPosition
 FMD::retract(FMDPosition range, usint c, bool backward) const
 {
 
+  // TODO: Does not work at all.
   
   if(backward)
   {
@@ -746,6 +747,7 @@ FMD::mapPosition(const std::string& pattern, usint index) const
     // Backwards extend with subsequent characters.
     FMDPosition next_position = this->extend(result.position, character,
       true);
+    extends++;
       
     DEBUG(std::cout << "Now at " << next_position << " after " << 
       pattern[index] << std::endl;)
@@ -819,6 +821,7 @@ FMD::mapPosition(const RangeVector& ranges, const std::string& pattern,
     // Forwards extend with subsequent characters.
     FMDPosition next_position = this->extend(result.position, pattern[index],
       false);
+    extends++;
       
     DEBUG(std::cout << "Now at " << next_position << " after " << 
       pattern[index] << std::endl;)
@@ -882,6 +885,7 @@ FMD::map(const std::string& query, usint start, sint length) const
       // We do not currently have a non-empty FMDPosition to extend. Start over
       // by mapping this character by itself.
       location = this->mapPosition(query, i);
+      restarts++;
     }
     else
     {
@@ -890,6 +894,7 @@ FMD::map(const std::string& query, usint start, sint length) const
       // mapping. Try to extend the FMDPosition we have to the right (not
       // backwards) with the next base.
       location.position = this->extend(location.position, query[i], false);
+      extends++;
       location.characters++;
     }
     
@@ -1007,6 +1012,7 @@ FMD::map(const RangeVector& ranges, const std::string& query, usint start,
       // We do not currently have a non-empty FMDPosition to extend. Start over
       // by mapping this character by itself.
       location = this->mapPosition(ranges, query, i);
+      restarts++;
     }
     else
     {
@@ -1015,6 +1021,7 @@ FMD::map(const RangeVector& ranges, const std::string& query, usint start,
       // mapping. Try to extend the FMDPosition we have to the left (backwards)
       // with the next base.
       location.position = this->extend(location.position, query[i], true);
+      extends++;
       location.characters++;
     }
     
@@ -1102,6 +1109,20 @@ FMD::iterator FMD::end(usint depth, bool reportDeadEnds) const
 {
   // Make a new suffix tree iterator that is just a 1-past-the-end sentinel.
   return FMD::iterator(*this, depth, true, reportDeadEnds);
+}
+
+usint FMD::extends = 0;
+usint FMD::restarts = 0;
+
+pair_type
+FMD::getStats() {
+  // Pair up the stats.
+  pair_type toReturn = std::make_pair(extends, restarts);
+  
+  // Clear the static counters
+  extends = restarts = 0;
+  
+  return toReturn;
 }
 
 FMDPosition

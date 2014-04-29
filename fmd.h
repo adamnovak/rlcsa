@@ -481,6 +481,22 @@ class FMD : public RLCSA
      * begin.
      */
     iterator end(usint depth, bool reportDeadEnds=false) const;
+    
+    /**
+     * Return a pair of the number of extends and number of restarts that
+     * occurred in mapping operations on any FMD since the last call to
+     * getStats(), or since the object was created. Extends are calls to
+     * extend() from mapping functions (including mapPosition()), while restarts
+     * are calls to mapPosition() from mapping functions.
+     */
+    static pair_type getStats();
+      
+  protected:
+    // How many times did we extend a search while mapping?
+    static usint extends;
+    
+    // How many times did we restart a search while mapping?
+    static usint restarts;
       
   private:
     /**

@@ -14,7 +14,7 @@ VECTOR_FLAGS = $(PSI_FLAGS) $(LCP_FLAGS) $(SA_FLAGS)
 # PSI_FLAGS = -DUSE_NIBBLE_VECTORS
 # LCP_FLAGS = -DSUCCINCT_LCP_VECTOR
 # SA_FLAGS = -DSUCCINCT_SA_VECTOR
-DEBUG_FLAGS = -g -pg -fno-inline
+DEBUG_FLAGS = -g -fno-inline
 
 # Flags to use for SWIG. Adjust for your platform
 SWIG_FLAGS = -I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/linux -fno-strict-aliasing
