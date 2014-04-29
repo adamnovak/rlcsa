@@ -518,7 +518,8 @@ class FMD : public RLCSA
       sint length = -1) const;
       
     /**
-     * Map each base in the string to a range using FM-index search.
+     * Map each base in the string to a range using FM-index search. Maps based
+     * on left-context, unlike the FMD version of this function.
      */
     std::vector<sint> mapFM(const RangeVector& ranges,
       const std::string& query, usint start = 0, sint length = -1) const;
