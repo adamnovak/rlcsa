@@ -768,71 +768,6 @@ FMD::countUntilUnique(const std::string& pattern, usint index) const
   return std::make_pair(index_range, index - i);
 }
 
-std::pair<sint, usint>
-FMD::countUntilUnique(const RangeVector& ranges, const std::string& pattern,
-  usint index) const
-{
-
-  // Get an iterator for making rank queries.
-  RangeVector::Iterator iter(ranges);
-
-  // Mostly copied from the RLCSA count method.
-  
-  if(pattern.length() == 0 || index == 0) {
-    return std::make_pair(-1, 0);
-  }
-
-  // Start at the index we want to map.
-  sint i = index;
-  // And with the range from just that character.
-  pair_type index_range = this->getCharRange((uchar)pattern[i]);
-  
-  // Make sure we aren't empty already.
-  if(isEmpty(index_range)) {
-    return std::make_pair(-1, index - i + 1);
-  }
-  
-  // Look up the range that the starting position is in
-  sint start_range = iter.rank(index_range.first);
-  
-  // And the range the end is in
-  sint end_range = iter.rank(index_range.second);
-  
-  if(start_range == end_range) { 
-    // We found a unique place. Return it.
-    return std::make_pair(start_range, index - i + 1);
-  }
-
-  for(--i; i >= 0; --i)
-  {
-    // For each base going left...
-  
-    // Apply the LF mapping to shrink the range.
-    index_range = this->LF(index_range, (uchar)pattern[i]);
-    
-    // Stop if we're empty.
-    if(isEmpty(index_range)) {
-      return std::make_pair(-1, index - i + 1);
-    }
-    
-    // Look up the range that the starting position is in
-    sint start_range = iter.rank(index_range.first);
-    
-    // And the range the end is in
-    sint end_range = iter.rank(index_range.second);
-    
-    if(start_range == end_range) { 
-      // We found a unique place. Return it.
-      return std::make_pair(start_range, index - i + 1);
-    }
-    
-  }
-  
-  // If we get here, we hit the start and still aren't unique. Report our too-
-  // big range.
-  return std::make_pair(-1, index - i);
-}
-
 
 MapAttemptResult
 FMD::mapPosition(const std::string& pattern, usint index) const
@@ -1291,40 +1226,6 @@ FMD::map(const RangeVector& ranges, const std::string& query, usint start,
   // Give back our answers.
   return mappings;
     
-}
-
-std::vector<sint> 
-FMD::mapFM(const RangeVector& ranges, const std::string& query, usint start,
-  sint length) const {
-
-  // The same as the above function, but without using extend, and mapping left
-  // contexts instead of right.
-
-  if(length == -1) {
-    // Fix up the length parameter if it is -1: that means the whole rest of the
-    // string.
-    length = query.length() - start;
-  }
-  
-  // We need a vector to return.
-  std::vector<sint> mappings;
-  
-  for(sint i = (start + length - 1); i >= (sint)start; i--)
-  {
-    // For each base to map...
-
-    // Count left from there until we don't need to any more.
-    std::pair<sint, usint> countResult = countUntilUnique(ranges, query,
-      i);
-    usint range = countResult.first;
-    
-    
-    mappings.push_back(range);
-  }
-  
-  // We've gone through and attempted the whole string. Give back our answers.
-  return mappings;
-
 }
 
 FMD::iterator FMD::begin(usint depth, bool reportDeadEnds) const
