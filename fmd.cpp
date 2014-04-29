@@ -1298,28 +1298,41 @@ FMD::mapFM(const RangeVector& ranges, const std::string& query, usint start,
   sint length) const {
 
   // The same as the above function, but without using extend.
-
+  
   if(length == -1) {
     // Fix up the length parameter if it is -1: that means the whole rest of the
     // string.
     length = query.length() - start;
   }
   
+  // Problem: we need to store the answers at places dependent on where the left
+  // end of the range ended up, since we're right-mapping.
+  
   // We need a vector to return.
   std::vector<sint> mappings;
+  mappings.resize(length);
+  // By default, no mappings happened.
+  std::fill(mappings.begin(), mappings.end(), -1);
   
-  for(sint i = start; i < (sint)(start + length); i++)
+  
+  for(sint i = 0; i < length; i++)
   {
-    // For each base to map...
+    // For each base to map, going backwards through the reverse complement...
 
     // Count left from there until we don't need to any more.
     std::pair<sint, usint> countResult = countUntilUnique(ranges, query,
-      i);
-    usint range = countResult.first;
+      start + i);
+    sint range = countResult.first;
     usint characters = countResult.second;
     
-    
-    mappings.push_back(range);
+    if(range != -1) {
+      // We map uniquely to that range at characters characters before the place
+      // we started.
+      
+      std::cout << characters - 1 << " before " << i << " is " << range << std::endl;
+      
+      mappings[i - characters + 1] = range;
+    }
   }
   
   // We've gone through and attempted the whole string. Give back our answers.

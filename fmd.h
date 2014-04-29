@@ -99,6 +99,26 @@ inline usint reverse_complement(usint input) {
 }
 
 /**
+ * Take the reverse complement of an entire string.
+ */
+inline std::string reverse_complement(const std::string& sequence) {
+  // Make a string to hold the result.
+  std::string toReturn;
+  
+  // Make sure it's big enough.
+  toReturn.resize(sequence.size());
+  
+  // Map over the input sequence in reverse. static_cast magic is needed to
+  // resolve the overload. See <http://stackoverflow.com/a/2942442/402891>
+  std::transform(sequence.rbegin(), sequence.rend(), toReturn.begin(),
+    static_cast<usint (*)(usint)>(&reverse_complement));
+    
+  // Return the result.
+  return toReturn;
+
+}
+
+/**
  * Represents the state (or result) of an FMD-index search, which is two ranges
  * (one for the forward sequence, and one for the reverse complement) of equal
  * length. The ranges are stored as two start indices and a length. They can be
